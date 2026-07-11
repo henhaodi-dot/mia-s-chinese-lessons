@@ -1,0 +1,35 @@
+<!-- 田字格 practice worksheet — standalone print page. Open this directly in
+     a browser on the laptop; it has no app chrome and is meant to be printed. -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写字练习纸 — 汉字花园</title>
+<link rel="stylesheet" href="css/print.css">
+<style id="page-size-style">@page { size: letter; margin: 1cm; }</style>
+</head>
+<body>
+
+  <div class="no-print controls">
+    <h1>写字练习纸</h1>
+    <div class="control-row">
+      <span>纸张：</span>
+      <button id="btn-size-letter" class="size-button active" type="button">Letter</button>
+      <button id="btn-size-a4" class="size-button" type="button">A4</button>
+      <button id="btn-print" class="print-button" type="button">🖨️ 打印</button>
+    </div>
+    <div class="control-row">
+      <button id="btn-select-week" class="pick-button" type="button">选择本周的字</button>
+      <button id="btn-select-all" class="pick-button" type="button">全选</button>
+      <button id="btn-select-none" class="pick-button" type="button">全不选</button>
+    </div>
+    <div id="character-picker" class="character-picker"></div>
+  </div>
+
+  <div id="worksheet" class="worksheet"></div>
+
+  <script src="vendor/hanzi-writer.min.js"></script>
+  <script type="module" src="js/print.js"></script>
+</body>
+</html>

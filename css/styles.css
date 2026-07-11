@@ -1,0 +1,625 @@
+/* 汉字花园 — garden palette + big, friendly touch targets for a young child. */
+
+:root {
+  --garden-sky: #eaf6ff;
+  --garden-green: #4caf50;
+  --garden-green-dark: #2e7d32;
+  --garden-brown: #8d6e63;
+  --garden-gold: #ffb300;
+  --garden-pink: #ff8a80;
+  --text-dark: #2b2b2b;
+  --card-bg: #ffffff;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --touch-min: 64px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--garden-sky);
+  color: var(--text-dark);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen:not(.hidden) {
+  animation: screen-fade-in 0.25s ease;
+}
+
+@keyframes screen-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Each quiz round / intro step creates a fresh .session-content element
+   (see session.js's `el()` + replaceChildren), so this replays smoothly
+   every time without any extra JS bookkeeping. */
+.session-content {
+  animation: content-fade-in 0.3s ease;
+}
+
+@keyframes content-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--garden-sky);
+  z-index: 100;
+}
+
+/* ---------- Garden header ---------- */
+
+.garden-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.header-icon-group {
+  display: flex;
+  gap: 10px;
+}
+
+.icon-button {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  font-size: 28px;
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.panda-corner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panda-face {
+  font-size: 56px;
+  display: inline-block;
+  animation: panda-idle 3s ease-in-out infinite;
+}
+
+@keyframes panda-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(-3deg); }
+}
+
+.panda-face.cheer {
+  animation: panda-cheer 0.6s ease-in-out infinite;
+}
+
+@keyframes panda-cheer {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(8deg); }
+}
+
+.panda-face.sleep {
+  animation: none;
+  opacity: 0.6;
+}
+
+/* ---------- Streak calendar ---------- */
+
+.streak-calendar {
+  padding: 0 20px 8px;
+}
+
+.streak-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.streak-cell {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.streak-cell.empty {
+  background: transparent;
+}
+
+.streak-cell.today {
+  outline: 2px solid var(--garden-green);
+}
+
+.streak-day-num {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  color: #bbb;
+}
+
+.streak-stamp {
+  font-size: 20px;
+  color: #e53935;
+  font-weight: bold;
+  border: 2px solid #e53935;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-12deg);
+}
+
+.streak-stamp.stamp-land {
+  animation: stamp-land 0.5s ease-out;
+}
+
+@keyframes stamp-land {
+  0% { transform: rotate(-12deg) scale(3); opacity: 0; }
+  60% { transform: rotate(-12deg) scale(0.9); opacity: 1; }
+  100% { transform: rotate(-12deg) scale(1); opacity: 1; }
+}
+
+/* ---------- Garden grid ---------- */
+
+.garden-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  padding: 12px 20px;
+  align-content: start;
+}
+
+.plant-tile {
+  min-height: var(--touch-min);
+  background: var(--card-bg);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  gap: 4px;
+  position: relative;
+}
+
+.plant-tile .plant-emoji {
+  font-size: 34px;
+}
+
+.plant-tile .plant-char {
+  font-size: 15px;
+  color: #666;
+}
+
+.plant-tile.due::after {
+  content: "💧";
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 18px;
+}
+
+/* A due plant looks gently thirsty — a small droop, never punishing. */
+.plant-tile.due .plant-emoji {
+  display: inline-block;
+  transform: rotate(-8deg) translateY(2px);
+}
+
+/* ---------- Start button ---------- */
+
+.start-button-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.big-button {
+  min-height: 88px;
+  min-width: 260px;
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  background: var(--garden-green);
+  border-radius: 44px;
+  box-shadow: var(--shadow);
+  padding: 0 32px;
+}
+
+.big-button:active {
+  background: var(--garden-green-dark);
+}
+
+/* ---------- Session screen ---------- */
+
+.session-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  text-align: center;
+}
+
+.big-emoji {
+  font-size: 120px;
+}
+
+.big-character {
+  font-size: 140px;
+  line-height: 1;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.choice-tile {
+  min-height: 140px;
+  background: var(--card-bg);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+}
+
+.choice-tile:active {
+  transform: scale(0.96);
+}
+
+.choice-tile.correct {
+  background: #c8f7c5;
+}
+
+.choice-tile.incorrect {
+  background: #ffd6d6;
+}
+
+.writer-target {
+  width: 300px;
+  height: 300px;
+  background: var(--card-bg);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.replay-button {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  font-size: 32px;
+  background: var(--card-bg);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- Paper mode ---------- */
+
+.paper-progress {
+  font-size: 16px;
+  color: #888;
+}
+
+.sticker-pop {
+  animation: sticker-pop 0.6s ease-out;
+}
+
+@keyframes sticker-pop {
+  0% { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+  70% { transform: scale(1.2) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ---------- Card collection ---------- */
+
+.simple-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.header-title {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.card-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+  padding: 12px 20px;
+  align-content: start;
+}
+
+.hanzi-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 3px solid transparent;
+}
+
+.hanzi-card.golden {
+  border-color: var(--garden-gold);
+  box-shadow: 0 0 16px var(--garden-gold);
+  position: relative;
+  overflow: hidden;
+}
+
+.hanzi-card.golden::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: golden-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes golden-shimmer {
+  0% { left: -150%; }
+  50% { left: 150%; }
+  100% { left: 150%; }
+}
+
+.hanzi-card .card-char {
+  font-size: 40px;
+}
+
+.hanzi-card .card-pinyin {
+  font-size: 13px;
+  color: #777;
+}
+
+.empty-state-message {
+  text-align: center;
+  color: #888;
+  font-size: 16px;
+  padding: 20px;
+}
+
+/* ---------- Confetti ---------- */
+
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 300;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+
+.confetti-piece:nth-child(3n) {
+  border-radius: 50%;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(540deg);
+    opacity: 0.8;
+  }
+}
+
+/* ---------- Card detail popup ---------- */
+
+.card-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.card-modal {
+  background: var(--card-bg);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  padding: 32px;
+  min-width: 260px;
+  text-align: center;
+  position: relative;
+}
+
+.card-modal .icon-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 18px;
+}
+
+/* ---------- Parent corner ---------- */
+
+.parent-content {
+  padding: 20px;
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.parent-gate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.parent-gate-question {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.parent-gate-input {
+  font-size: 24px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 2px solid #ccc;
+  width: 160px;
+  text-align: center;
+}
+
+.parent-gate-feedback {
+  color: #d32f2f;
+  min-height: 1.2em;
+}
+
+.parent-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.parent-section h3 {
+  margin-top: 0;
+}
+
+.parent-hint {
+  font-size: 13px;
+  color: #777;
+}
+
+.parent-textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 16px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.parent-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.parent-field input[type="text"],
+.parent-field input[type="date"],
+.parent-field select {
+  font-size: 15px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid #ddd;
+}
+
+.parent-checkbox input {
+  width: 22px;
+  height: 22px;
+}
+
+.parent-table-wrap {
+  overflow-x: auto;
+}
+
+.parent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.parent-table th,
+.parent-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.parent-action-button {
+  width: auto;
+  padding: 0 16px;
+  margin-top: 8px;
+  margin-right: 8px;
+  font-size: 15px;
+  min-height: 48px;
+}
+
+.parent-file-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.parent-file-input {
+  display: none;
+}
+
+/* ---------- Responsive: portrait tablets/phones ---------- */
+
+@media (orientation: portrait) {
+  .garden-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
+}

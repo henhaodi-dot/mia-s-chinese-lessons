@@ -1,0 +1,14 @@
+Paste the ~50 characters your daughter already knows here, in any format —
+spaces, commas, or all run together. The setup script only pulls out actual
+Chinese characters, so any English notes (like this one) are ignored safely.
+
+This file is read by scripts/fetch_strokes.mjs so stroke data for her known
+characters is downloaded and ready offline, even before you run the app's
+first-time Parent Corner setup wizard (which is where you'll paste the same
+list into the app itself to seed her progress at box 4).
+
+Example:
+的了是我你他她不在有这那
+
+Replace the example line above with her real list, or leave it as-is —
+fetch_strokes.mjs will just fetch strokes for those characters too.

@@ -1,0 +1,34 @@
+{
+  "hello_1": { "text": "你好呀，浇水时间到啦！", "pinyin": "Nǐ hǎo ya, jiāoshuǐ shíjiān dào la!" },
+  "hello_2": { "text": "嗨！我们一起去看看花园吧！", "pinyin": "Hāi! Wǒmen yìqǐ qù kànkan huāyuán ba!" },
+  "hello_3": { "text": "太阳出来啦，我们开始吧！", "pinyin": "Tàiyáng chūlái la, wǒmen kāishǐ ba!" },
+  "hello_4": { "text": "你来啦！花园在等你呢！", "pinyin": "Nǐ lái la! Huāyuán zài děng nǐ ne!" },
+  "hello_5": { "text": "早呀，准备好浇水了吗？", "pinyin": "Zǎo ya, zhǔnbèi hǎo jiāoshuǐ le ma?" },
+
+  "tryAgain_1": { "text": "再试一次，你可以的！", "pinyin": "Zài shì yí cì, nǐ kěyǐ de!" },
+  "tryAgain_2": { "text": "没关系，再来一次吧！", "pinyin": "Méi guānxi, zài lái yí cì ba!" },
+  "tryAgain_3": { "text": "慢慢想，再试一次！", "pinyin": "Mànmàn xiǎng, zài shì yí cì!" },
+
+  "praise_1": { "text": "太棒了！", "pinyin": "Tài bàng le!" },
+  "praise_2": { "text": "你真厉害！", "pinyin": "Nǐ zhēn lìhai!" },
+  "praise_3": { "text": "做得真好！", "pinyin": "Zuò de zhēn hǎo!" },
+  "praise_4": { "text": "太聪明啦！", "pinyin": "Tài cōngmíng la!" },
+  "praise_5": { "text": "你学会了，真棒！", "pinyin": "Nǐ xuéhuì le, zhēn bàng!" },
+
+  "welcomeBack_1": { "text": "欢迎回来呀，我好想你！", "pinyin": "Huānyíng huílái ya, wǒ hǎo xiǎng nǐ!" },
+  "welcomeBack_2": { "text": "你回来啦，花园一直在等你！", "pinyin": "Nǐ huílái la, huāyuán yìzhí zài děng nǐ!" },
+
+  "newSeedAnnouncement_1": { "text": "今天有一颗新的种子哦！", "pinyin": "Jīntiān yǒu yì kē xīn de zhǒngzi ó!" },
+  "newSeedAnnouncement_2": { "text": "我们来种一个新字吧！", "pinyin": "Wǒmen lái zhòng yí ge xīn zì ba!" },
+
+  "wateringTimeAnnouncement_1": { "text": "浇水时间到啦！", "pinyin": "Jiāoshuǐ shíjiān dào la!" },
+  "wateringTimeAnnouncement_2": { "text": "我们去给花园浇浇水吧！", "pinyin": "Wǒmen qù gěi huāyuán jiāo jiao shuǐ ba!" },
+
+  "sessionComplete_1": { "text": "今天的花园完成啦，你真棒！", "pinyin": "Jīntiān de huāyuán wánchéng la, nǐ zhēn bàng!" },
+  "sessionComplete_2": { "text": "太厉害了，花园又长大了一点！", "pinyin": "Tài lìhai le, huāyuán yòu zhǎngdà le yìdiǎn!" },
+  "sessionComplete_3": { "text": "今天做得真好，明天见！", "pinyin": "Jīntiān zuò de zhēn hǎo, míngtiān jiàn!" },
+
+  "paperPracticeInstruction": { "text": "拿起你的笔，跟着我写三遍吧！", "pinyin": "Ná qǐ nǐ de bǐ, gēnzhe wǒ xiě sān biàn ba!" },
+
+  "cardCollectionIntro": { "text": "这是你的卡片册，每一张都是你学会的字！", "pinyin": "Zhè shì nǐ de kǎpiàn cè, měi yì zhāng dōu shì nǐ xuéhuì de zì!" }
+}

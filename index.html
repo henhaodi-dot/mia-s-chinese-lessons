@@ -1,0 +1,87 @@
+<!-- 汉字花园 (Hanzi Garden) — main app shell. -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>汉字花园</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icons/icon-192.png">
+<meta name="theme-color" content="#4caf50">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Garden screen: this is the home screen and the progress dashboard. -->
+  <section id="screen-garden" class="screen" aria-label="花园">
+    <header class="garden-header">
+      <div class="header-icon-group">
+        <button id="btn-cards" class="icon-button" aria-label="卡片册" title="卡片册">📖</button>
+        <button id="btn-paper" class="icon-button" aria-label="写字时间" title="写字时间">✏️</button>
+      </div>
+      <div id="panda-corner" class="panda-corner" aria-hidden="true">
+        <span id="panda-face" class="panda-face">🐼</span>
+      </div>
+      <button id="btn-parent" class="icon-button" aria-label="家长区" title="家长区">⚙️</button>
+    </header>
+
+    <div id="streak-calendar" class="streak-calendar" aria-label="连续记录日历"></div>
+
+    <div id="garden-grid" class="garden-grid" aria-label="我的花园"></div>
+
+    <div class="start-button-wrap">
+      <button id="btn-start-session" class="big-button">💧 浇水时间</button>
+    </div>
+  </section>
+
+  <!-- Card detail popup: shown when tapping a plant in the garden. -->
+  <div id="card-modal" class="card-modal-overlay hidden">
+    <div class="card-modal">
+      <button id="btn-card-modal-close" class="icon-button" aria-label="关闭" type="button">✖️</button>
+      <div id="card-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Session overlay: hello -> watering -> new seed -> celebration. Covers
+       the whole screen while a session is running. -->
+  <section id="screen-session" class="screen screen-overlay hidden" aria-label="浇水时间">
+    <div id="session-content" class="session-content"></div>
+  </section>
+
+  <!-- Paper mode overlay (写字时间): weekend workbook companion. -->
+  <section id="screen-paper" class="screen screen-overlay hidden" aria-label="写字时间">
+    <div id="paper-content" class="session-content"></div>
+  </section>
+
+  <!-- Card collection screen (卡片册). -->
+  <section id="screen-cards" class="screen hidden" aria-label="卡片册">
+    <header class="simple-header">
+      <button id="btn-cards-back" class="icon-button" aria-label="返回">⬅️</button>
+      <span class="header-title">卡片册 <span id="card-count-badge"></span></span>
+    </header>
+    <div id="card-grid" class="card-grid"></div>
+  </section>
+
+  <!-- Parent Corner (家长区) — gated by a math question so she can't wander in. -->
+  <section id="screen-parent" class="screen hidden" aria-label="家长区">
+    <header class="simple-header">
+      <button id="btn-parent-back" class="icon-button" aria-label="返回">⬅️</button>
+      <span class="header-title">家长区</span>
+    </header>
+
+    <div id="parent-gate" class="parent-gate">
+      <p>先回答一个小问题，确认是家长在操作：</p>
+      <p id="parent-gate-question" class="parent-gate-question"></p>
+      <input id="parent-gate-input" type="number" inputmode="numeric" class="parent-gate-input" placeholder="答案" />
+      <button id="parent-gate-submit" class="big-button" type="button">确认</button>
+      <p id="parent-gate-feedback" class="parent-gate-feedback"></p>
+    </div>
+
+    <div id="parent-content" class="parent-content hidden"></div>
+  </section>
+
+  <!-- Vendored locally so stroke animation/tracing works fully offline. -->
+  <script src="vendor/hanzi-writer.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
