@@ -65,9 +65,10 @@ export async function runPaperMode(progress, charMap) {
       `)
     );
     const target = container.querySelector(".writer-target");
-    await playLine(`char_${entry.char}`);
-    loopSlowAnimation(target, entry.char);
 
+    // Attach the click listener before awaiting the audio — a child who
+    // taps "wrote it three times" while the line is still playing
+    // shouldn't have that tap silently dropped.
     document.getElementById("btn-wrote-three").addEventListener("click", async () => {
       stopLoop();
       awardSticker(progress, entry.char);
@@ -82,6 +83,9 @@ export async function runPaperMode(progress, charMap) {
         showCompletion();
       }
     });
+
+    await playLine(`char_${entry.char}`);
+    loopSlowAnimation(target, entry.char);
   }
 
   async function showStickerAward(entry) {

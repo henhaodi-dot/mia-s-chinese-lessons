@@ -95,7 +95,6 @@ async function runQuizRound(container, char, charMap, progress) {
       choiceGrid.appendChild(makeChoiceTile(choice.char, choice.char));
     }
     prompt.appendChild(choiceGrid);
-    await playLine(`char_${entry.char}`);
   } else if (quizType === QUIZ_TYPES.CHAR_TO_PIC) {
     prompt.appendChild(el(`<div class="big-character">${entry.char}</div>`));
     const choiceGrid = el(`<div class="choice-grid"></div>`);
@@ -110,10 +109,20 @@ async function runQuizRound(container, char, charMap, progress) {
       choiceGrid.appendChild(makeChoiceTile(choice.char, choice.char));
     }
     prompt.appendChild(choiceGrid);
+  }
+
+  // Start listening for a tap BEFORE awaiting the audio — a child who taps
+  // while the line is still playing should never have that tap silently
+  // dropped just because the listener hadn't been attached yet.
+  const tapPromise = waitForTap(container, ".choice-tile");
+
+  if (quizType === QUIZ_TYPES.AUDIO_TO_CHAR) {
+    await playLine(`char_${entry.char}`);
+  } else if (quizType === QUIZ_TYPES.PIC_TO_CHAR) {
     await playLine(`word_${entry.char}`);
   }
 
-  const tappedTile = await waitForTap(container, ".choice-tile");
+  const tappedTile = await tapPromise;
   const isCorrect = tappedTile.dataset.answerChar === entry.char;
   tappedTile.classList.add(isCorrect ? "correct" : "incorrect");
   await new Promise((r) => setTimeout(r, 400));
@@ -149,9 +158,10 @@ async function runTraceQuizRound(container, entry, quizType) {
   container.appendChild(prompt);
   const target = prompt.querySelector(".writer-target");
 
-  await playLine(`char_${entry.char}`);
-
-  return new Promise((resolve) => {
+  // Set up tracing before awaiting the audio — Hanzi Writer only listens
+  // for strokes once .quiz() has been called, so a child who starts
+  // tracing while the line is still playing shouldn't be ignored.
+  const resultPromise = new Promise((resolve) => {
     const onComplete = () => resolve(true);
     if (quizType === QUIZ_TYPES.TRACE_HINT) {
       runTraceHintQuiz(target, entry.char, { onComplete });
@@ -159,6 +169,9 @@ async function runTraceQuizRound(container, entry, quizType) {
       runWriteFromMemoryQuiz(target, entry.char, { onComplete });
     }
   });
+
+  await playLine(`char_${entry.char}`);
+  return resultPromise;
 }
 
 // ---------- watering (reviews) ----------
@@ -244,8 +257,11 @@ async function runNewSeedIntro(container, entry, progress, charMap) {
   confidenceScreen.appendChild(choiceGrid);
   container.replaceChildren(confidenceScreen);
 
+  // Listen for a tap before awaiting the audio, so a tap during playback
+  // isn't silently dropped (see the same fix in runQuizRound above).
+  const tapPromise = waitForTap(container, ".choice-tile");
   await playLine(`word_${entry.char}`);
-  const tapped = await waitForTap(container, ".choice-tile");
+  const tapped = await tapPromise;
   tapped.classList.add(tapped.dataset.answerChar === entry.char ? "correct" : "incorrect");
   await new Promise((r) => setTimeout(r, 400));
 
@@ -287,8 +303,9 @@ async function showCelebration(container, progress) {
       </div>
     `)
   );
+  const tapPromise = waitForTap(container, ".big-button");
   await playLine(pickVariant("sessionComplete", 3));
-  await waitForTap(container, ".big-button");
+  await tapPromise;
   setPandaCheering(false);
 }
 
