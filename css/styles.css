@@ -169,17 +169,12 @@ button {
 }
 
 .streak-stamp {
-  font-size: 20px;
-  color: #e53935;
-  font-weight: bold;
-  border: 2px solid #e53935;
-  border-radius: 50%;
-  width: 26px;
-  height: 26px;
+  font-size: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(-12deg);
+  width: 26px;
+  height: 26px;
 }
 
 .streak-stamp.stamp-land {
@@ -187,9 +182,9 @@ button {
 }
 
 @keyframes stamp-land {
-  0% { transform: rotate(-12deg) scale(3); opacity: 0; }
-  60% { transform: rotate(-12deg) scale(0.9); opacity: 1; }
-  100% { transform: rotate(-12deg) scale(1); opacity: 1; }
+  0% { transform: scale(3); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* ---------- Garden grid ---------- */

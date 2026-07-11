@@ -86,7 +86,7 @@ export function renderStreakCalendar(progress) {
     cells.push(`
       <div class="streak-cell${isToday ? " today" : ""}" data-date="${dateStr}">
         <span class="streak-day-num">${day}</span>
-        ${stamped ? '<span class="streak-stamp">印</span>' : ""}
+        ${stamped ? '<span class="streak-stamp">❤️</span>' : ""}
       </div>
     `);
   }
