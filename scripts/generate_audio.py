@@ -36,7 +36,7 @@ AUDIO_DIR = ROOT / "assets" / "audio"
 
 # Every line in this app is spoken to a 7-year-old, so one gentle,
 # slightly-slowed voice is used throughout.
-VOICE = "zh-CN-XiaoxiaoNeural"
+VOICE = "zh-CN-YunxiaNeural"
 RATE = "-10%"
 
 
@@ -47,11 +47,7 @@ def collect_lines():
     characters = json.loads(CHARACTERS_FILE.read_text(encoding="utf-8"))
     for entry in characters:
         char = entry["char"]
-        # A single character with no surrounding text gives the TTS engine
-        # no sentence context, so it often clips the tone short instead of
-        # letting it fall naturally. Appending a full stop (spoken silently,
-        # not audible as a word) gives it a normal sentence-final contour.
-        lines.append((f"char_{char}", entry["char"] + "。"))
+        lines.append((f"char_{char}", entry["char"]))
         lines.append((f"word_{char}", entry["word"]))
         lines.append((f"sentence_{char}", entry["sentence"]))
 
