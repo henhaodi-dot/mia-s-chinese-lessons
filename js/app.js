@@ -23,6 +23,21 @@ function showScreen(id) {
   document.getElementById(id).classList.remove("hidden");
 }
 
+// This is a single-page app, so without this, the tablet's physical/gesture
+// back button has no in-app "screen" to return from — one tap exits
+// straight out to Silk's own home page. Pushing a history entry whenever we
+// leave the garden means back instead returns to the garden, like a normal
+// app's back button would.
+function showScreenWithBackSupport(id) {
+  history.pushState({ hanziGardenScreen: id }, "");
+  showScreen(id);
+}
+
+window.addEventListener("popstate", () => {
+  hideCardModal();
+  showScreen("screen-garden");
+});
+
 function renderGardenGrid() {
   const grid = document.getElementById("garden-grid");
   grid.innerHTML = "";
@@ -89,6 +104,7 @@ function renderCardGrid() {
 
 async function handleStartSession() {
   await unlockAudio();
+  history.pushState({ hanziGardenScreen: "screen-session" }, "");
   const btn = document.getElementById("btn-start-session");
   btn.disabled = true;
   try {
@@ -131,12 +147,13 @@ async function main() {
 
   document.getElementById("btn-cards").addEventListener("click", () => {
     renderCardGrid();
-    showScreen("screen-cards");
+    showScreenWithBackSupport("screen-cards");
   });
-  document.getElementById("btn-cards-back").addEventListener("click", () => showScreen("screen-garden"));
+  document.getElementById("btn-cards-back").addEventListener("click", () => history.back());
 
   document.getElementById("btn-paper").addEventListener("click", async () => {
     await unlockAudio();
+    history.pushState({ hanziGardenScreen: "screen-paper" }, "");
     await runPaperMode(progress, charMap);
     renderGardenGrid();
     renderStreakCalendar(progress);
@@ -147,9 +164,9 @@ async function main() {
     document.getElementById("parent-gate").classList.remove("hidden");
     document.getElementById("parent-content").classList.add("hidden");
     generateGateQuestion();
-    showScreen("screen-parent");
+    showScreenWithBackSupport("screen-parent");
   });
-  document.getElementById("btn-parent-back").addEventListener("click", () => showScreen("screen-garden"));
+  document.getElementById("btn-parent-back").addEventListener("click", () => history.back());
 
   const handleGateSubmit = () => {
     if (checkGateAnswer()) {
@@ -167,9 +184,9 @@ async function main() {
     if (e.key === "Enter") handleGateSubmit();
   });
 
-  document.getElementById("btn-card-modal-close").addEventListener("click", hideCardModal);
+  document.getElementById("btn-card-modal-close").addEventListener("click", () => history.back());
   document.getElementById("card-modal").addEventListener("click", (e) => {
-    if (e.target.id === "card-modal") hideCardModal();
+    if (e.target.id === "card-modal") history.back();
   });
 }
 

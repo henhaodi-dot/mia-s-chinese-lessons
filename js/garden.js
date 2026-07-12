@@ -123,6 +123,9 @@ export function showCardModal(char, charMap, { withReplay = false } = {}) {
     ${withReplay ? `<button class="replay-button" type="button" id="btn-replay-stroke" aria-label="再看一次笔顺">▶️</button>` : ""}
   `;
   overlay.classList.remove("hidden");
+  // So the tablet's physical/gesture back button closes the modal instead
+  // of leaving the app entirely — see the matching popstate handler in app.js.
+  history.pushState({ hanziGardenCardModal: true }, "");
   playLine(`char_${char}`);
 
   if (withReplay) {
