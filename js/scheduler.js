@@ -65,15 +65,19 @@ export function buildDueQueue(progress, todayStr, maxItems = 8) {
 }
 
 // Picks the next not-yet-introduced character (by rank) for today's seed,
-// respecting the daily limit and pause toggle.
+// respecting the daily limit and pause toggle. dailyNewCount is how many
+// NEW characters she's allowed in a day total, not per session — so once
+// she's used up today's budget, tapping 浇水时间 again just reviews until
+// tomorrow resets it. Until the budget runs out, each tap can plant one
+// more seed, which is what lets her ask for more by simply tapping again.
 export function pickTodaysNewCharacter(progress, allCharacters, todayStr) {
   if (progress.settings.paused) return null;
   if (progress.settings.dailyNewCount < 1) return null;
 
-  const alreadyLearnedToday = Object.values(progress.characters).some(
+  const learnedToday = Object.values(progress.characters).filter(
     (state) => state.source === "daily" && state.dateLearned === todayStr
-  );
-  if (alreadyLearnedToday) return null;
+  ).length;
+  if (learnedToday >= progress.settings.dailyNewCount) return null;
 
   const sorted = [...allCharacters].sort((a, b) => a.rank - b.rank);
   return sorted.find((entry) => !progress.characters[entry.char]) || null;

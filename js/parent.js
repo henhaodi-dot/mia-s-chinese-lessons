@@ -67,6 +67,9 @@ export function renderParentContent(progress, charMap, onChange) {
         <select id="daily-new-count">
           <option value="0">0（暂停学新字）</option>
           <option value="1">1（默认）</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
         </select>
       </label>
       <label class="parent-field">
