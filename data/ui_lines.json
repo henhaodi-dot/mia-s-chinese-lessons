@@ -49,5 +49,11 @@
   "star_3": { "text": "太厉害了，记得又快又牢！", "pinyin": "Tài lìhai le, jìde yòu kuài yòu láo!" },
 
   "storyIntro": { "text": "今日小剧场！", "pinyin": "Jīnrì xiǎo jùchǎng!" },
-  "throttleLine": { "text": "今天先把花园浇好水", "pinyin": "Jīntiān xiān bǎ huāyuán jiāo hǎo shuǐ." }
+  "throttleLine": { "text": "今天先把花园浇好水", "pinyin": "Jīntiān xiān bǎ huāyuán jiāo hǎo shuǐ." },
+
+  "echoMicExplain": { "text": "熊猫想听听你读字的声音，我们试试看吧！", "pinyin": "Xióngmāo xiǎng tīngting nǐ dú zì de shēngyīn, wǒmen shìshi kàn ba!" },
+  "echoInstruction": { "text": "跟我读！", "pinyin": "Gēn wǒ dú!" },
+  "listenToYourself": { "text": "听听你的声音！", "pinyin": "Tīngting nǐ de shēngyīn!" },
+  "echoRetry": { "text": "大点声，再来一次！", "pinyin": "Dà diǎn shēng, zài lái yí cì!" },
+  "echoDone": { "text": "读得真好！", "pinyin": "Dú de zhēn hǎo!" }
 }

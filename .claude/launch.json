@@ -4,7 +4,7 @@
     {
       "name": "hanzi-garden-static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8420"],
+      "runtimeArgs": ["scripts/dev_server.py", "8420"],
       "port": 8420
     }
   ]

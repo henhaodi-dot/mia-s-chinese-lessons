@@ -443,6 +443,65 @@ button {
   color: white;
 }
 
+.sentence-build-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  min-height: 70px;
+  width: 100%;
+  max-width: 700px;
+  padding: 12px;
+  background: #eaf6ff;
+  border-radius: 18px;
+}
+
+.sentence-tile-pool {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.sentence-tile {
+  min-height: var(--touch-min);
+  padding: 10px 20px;
+  background: var(--card-bg);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  font-size: 36px;
+}
+
+.sentence-tile.placed {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.sentence-tile.shake {
+  animation: sentence-tile-shake 0.4s ease;
+}
+
+@keyframes sentence-tile-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.panda-feed-scene {
+  font-size: 120px;
+}
+
+.panda-feed-scene.chewing {
+  animation: panda-chew 0.5s ease-in-out 2;
+}
+
+@keyframes panda-chew {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
 /* ---------- Paper mode ---------- */
 
 .paper-progress {

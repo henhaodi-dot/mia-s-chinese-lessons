@@ -4,9 +4,6 @@
 //   runGame(container, { newChars, distractorChars, charMap, progress }) -> Promise<void>
 // and is responsible for rendering itself into `container`, playing its
 // own instruction audio, and resolving once the child has finished it.
-//
-// Only G1, G3, and G4 are real implementations so far — everything else
-// falls back to a simple placeholder round until later build steps.
 
 import { playLine, pickVariant } from "./audio.js";
 import { recordGameSeen } from "./progress.js";
@@ -95,6 +92,15 @@ const CONFUSABLE_GROUPS = [
 
 function findConfusableGroup(char) {
   return CONFUSABLE_GROUPS.find((group) => group.includes(char));
+}
+
+// Builds a metPool the same way session.js does, from progress + charMap,
+// for games (G5) that need to draw distractors from everything she's met
+// so far rather than just the 1-2 chars runGameArcade passed in.
+function buildMetPool(progress, charMap) {
+  return Object.keys(progress.characters)
+    .map((char) => charMap.get(char))
+    .filter(Boolean);
 }
 
 // Returns up to `count` visually-confusable characters for `char`, drawn
@@ -191,6 +197,39 @@ async function runG1(container, { newChars, distractorChars, charMap }) {
         const grid = screen.querySelector(".choice-grid");
         for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.char));
         screen.dataset.pendingAudio = `word_${char}`;
+        return screen;
+      },
+      char
+    );
+  }
+}
+
+// ============================================================
+// G2 — 句子填空 (sentence fill-blank)
+// ============================================================
+
+async function runG2(container, { newChars, distractorChars, charMap }) {
+  await playLine("gameInstruction_G2");
+
+  for (const char of shuffle(newChars)) {
+    const entry = charMap.get(char);
+    const blankSentence = entry.sentence.replace(char, "＿");
+    const otherNewChars = newChars.filter((c) => c !== char).map((c) => charMap.get(c));
+    const choicesPool = shuffle([...otherNewChars, ...distractorChars.map((c) => charMap.get(c))]).slice(0, 3);
+    const choices = shuffle([entry, ...choicesPool]);
+
+    await runToCorrectTap(
+      container,
+      () => {
+        const screen = el(`
+          <div class="session-content">
+            <div class="story-text">${blankSentence}</div>
+            <div class="choice-grid"></div>
+          </div>
+        `);
+        const grid = screen.querySelector(".choice-grid");
+        for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.char));
+        screen.dataset.pendingAudio = `sentence_${char}`;
         return screen;
       },
       char
@@ -340,29 +379,29 @@ async function runG4(container, { newChars, charMap }) {
 }
 
 // ============================================================
-// Placeholder for games not yet implemented (G2, G5, G6, G7, G8)
+// G5 — 火眼金睛 (eagle eye: spot the look-alike)
 // ============================================================
 
-async function runPlaceholder(container, { newChars, distractorChars, charMap, gameId }) {
-  await playLine(`gameInstruction_${gameId}`).catch(() => {});
+async function runG5(container, { newChars, charMap, progress }) {
+  await playLine("gameInstruction_G5");
+  const metPool = buildMetPool(progress, charMap);
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
-    const distractorEntries = shuffle(distractorChars.map((c) => charMap.get(c))).slice(0, 2);
-    const choices = shuffle([entry, ...distractorEntries]);
+    const confusables = getConfusables(char, metPool, 3);
+    const choices = shuffle([entry, ...confusables]);
 
     await runToCorrectTap(
       container,
       () => {
         const screen = el(`
           <div class="session-content">
-            <div class="big-emoji">${entry.emoji}</div>
             <div class="choice-grid"></div>
           </div>
         `);
         const grid = screen.querySelector(".choice-grid");
         for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.char));
-        screen.dataset.pendingAudio = `word_${char}`;
+        screen.dataset.pendingAudio = `char_${char}`;
         return screen;
       },
       char
@@ -370,16 +409,210 @@ async function runPlaceholder(container, { newChars, distractorChars, charMap, g
   }
 }
 
+// ============================================================
+// G6 — 组词车间 (word workshop: find the right partner character)
+// ============================================================
+
+// Picks `count` wrong partner candidates, preferring today's other new/
+// distractor characters and falling back to the full character set so
+// there's always enough choices even on a light (0-1 new char) day.
+function pickWrongPartners(count, excludeChars, charMap, preferredChars) {
+  const preferred = shuffle(preferredChars.filter((c) => !excludeChars.has(c)));
+  if (preferred.length >= count) return preferred.slice(0, count);
+  const fallbackPool = shuffle(
+    Array.from(charMap.keys()).filter((c) => !excludeChars.has(c) && !preferred.includes(c))
+  );
+  return [...preferred, ...fallbackPool].slice(0, count);
+}
+
+async function runG6(container, { newChars, distractorChars, charMap }) {
+  await playLine("gameInstruction_G6");
+
+  for (const char of shuffle(newChars)) {
+    const entry = charMap.get(char);
+    const partner = entry.word.replace(char, "");
+    const wrongPartners = pickWrongPartners(
+      2,
+      new Set([char, partner]),
+      charMap,
+      [...newChars, ...distractorChars]
+    );
+    const candidateChars = shuffle([partner, ...wrongPartners]);
+
+    let tile;
+    do {
+      const screen = el(`
+        <div class="session-content">
+          <div class="big-character">${char}</div>
+          <div class="choice-grid"></div>
+        </div>
+      `);
+      container.replaceChildren(screen);
+      const grid = screen.querySelector(".choice-grid");
+      for (const candidate of candidateChars) grid.appendChild(makeTile(candidate, candidate));
+      const tapPromise = waitForTap(container, ".choice-tile");
+      await playLine(`char_${char}`);
+      tile = await tapPromise;
+      const isCorrect = tile.dataset.answerChar === partner;
+      if (isCorrect) {
+        tile.classList.add("correct");
+        await new Promise((r) => setTimeout(r, 300));
+        container.replaceChildren(
+          el(`
+            <div class="session-content">
+              <div class="big-emoji">${entry.emoji}</div>
+              <div class="big-character">${entry.word}</div>
+            </div>
+          `)
+        );
+        await playLine(`word_${char}`);
+        await playLine(pickVariant("praise", 5));
+      } else {
+        await handleTapResult(container, tile, false);
+      }
+    } while (tile.dataset.answerChar !== partner);
+  }
+}
+
+// ============================================================
+// G7 — 句子拼拼乐 (sentence builder)
+// ============================================================
+
+// Our sentences are authored entirely from this app's own vocabulary, so a
+// dictionary built from every character's `word` field is enough for a
+// greedy longest-match segmentation (no external NLP needed).
+function buildWordDictionary(charMap) {
+  const words = new Set();
+  for (const entry of charMap.values()) {
+    if (entry.word && entry.word.length >= 2) words.add(entry.word);
+  }
+  return words;
+}
+
+function segmentSentence(sentence, wordDict) {
+  const tokens = [];
+  let i = 0;
+  while (i < sentence.length) {
+    const twoChar = sentence.slice(i, i + 2);
+    if (wordDict.has(twoChar)) {
+      tokens.push(twoChar);
+      i += 2;
+    } else {
+      tokens.push(sentence[i]);
+      i += 1;
+    }
+  }
+  return tokens;
+}
+
+async function runG7(container, { newChars, charMap }) {
+  await playLine("gameInstruction_G7");
+  const wordDict = buildWordDictionary(charMap);
+
+  for (const char of shuffle(newChars)) {
+    const entry = charMap.get(char);
+    const cleanSentence = entry.sentence.replace(/[。！？，、]/g, "");
+    const tokens = segmentSentence(cleanSentence, wordDict);
+    if (tokens.length < 2) continue; // nothing to sequence — skip gracefully
+
+    const screen = el(`
+      <div class="session-content">
+        <div class="sentence-build-strip"></div>
+        <div class="sentence-tile-pool"></div>
+      </div>
+    `);
+    container.replaceChildren(screen);
+    const strip = screen.querySelector(".sentence-build-strip");
+    const pool = screen.querySelector(".sentence-tile-pool");
+
+    const shuffledTokens = shuffle(tokens.map((token, order) => ({ token, order })));
+    const tileEls = shuffledTokens.map(({ token, order }) => {
+      const tile = el(`<button type="button" class="sentence-tile">${token}</button>`);
+      tile.dataset.order = String(order);
+      pool.appendChild(tile);
+      return tile;
+    });
+
+    await playLine(`sentence_${char}`);
+
+    let nextIndex = 0;
+    await new Promise((resolveGame) => {
+      tileEls.forEach((tile) => {
+        tile.addEventListener("click", async () => {
+          if (tile.classList.contains("placed")) return;
+          if (Number(tile.dataset.order) === nextIndex) {
+            tile.classList.add("placed");
+            strip.appendChild(tile);
+            nextIndex++;
+            if (nextIndex === tokens.length) {
+              await playLine(pickVariant("praise", 5));
+              resolveGame();
+            }
+          } else {
+            tile.classList.add("shake");
+            setTimeout(() => tile.classList.remove("shake"), 400);
+          }
+        });
+      });
+    });
+  }
+}
+
+// ============================================================
+// G8 — 喂熊猫 (feed the panda)
+// ============================================================
+
+async function runG8(container, { newChars, distractorChars, charMap }) {
+  await playLine("gameInstruction_G8");
+
+  for (const char of shuffle(newChars)) {
+    const entry = charMap.get(char);
+    const otherNewChars = newChars.filter((c) => c !== char).map((c) => charMap.get(c));
+    const choicesPool = shuffle([...otherNewChars, ...distractorChars.map((c) => charMap.get(c))]).slice(0, 3);
+    const choices = shuffle([entry, ...choicesPool]);
+
+    let tile;
+    do {
+      const screen = el(`
+        <div class="session-content">
+          <div class="panda-feed-scene">🐼</div>
+          <div class="choice-grid"></div>
+        </div>
+      `);
+      container.replaceChildren(screen);
+      const grid = screen.querySelector(".choice-grid");
+      for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.emoji));
+      const tapPromise = waitForTap(container, ".choice-tile");
+      await playLine(`feedRequest_${char}`);
+      tile = await tapPromise;
+      const isCorrect = tile.dataset.answerChar === char;
+      if (isCorrect) {
+        screen.querySelector(".panda-feed-scene").classList.add("chewing");
+        tile.classList.add("correct");
+        await playLine(pickVariant("praise", 5));
+        await new Promise((r) => setTimeout(r, 500));
+      } else {
+        await handleTapResult(container, tile, false);
+      }
+    } while (tile.dataset.answerChar !== char);
+  }
+}
+
 const GAME_IMPLEMENTATIONS = {
   G1: runG1,
+  G2: runG2,
   G3: runG3,
   G4: runG4,
+  G5: runG5,
+  G6: runG6,
+  G7: runG7,
+  G8: runG8,
 };
 
 // ---------- entry point ----------
 
 export async function runGame(gameId, container, { newChars, distractorChars, charMap, progress }) {
-  const impl = GAME_IMPLEMENTATIONS[gameId] || ((c, ctx) => runPlaceholder(c, { ...ctx, gameId }));
+  const impl = GAME_IMPLEMENTATIONS[gameId];
   await impl(container, { newChars, distractorChars, charMap, progress });
   for (const char of newChars) recordGameSeen(progress, char);
 }
