@@ -5,7 +5,7 @@
 // file. The cache name is derived from it, so a bump makes install() build
 // a fresh cache and activate() clean up the old one — without this, a
 // returning tablet would keep serving stale files forever. See README.md.
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's

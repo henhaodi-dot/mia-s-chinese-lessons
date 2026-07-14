@@ -24,14 +24,13 @@ function shuffle(array) {
 
 async function waitForTap(container, selector) {
   return new Promise((resolve) => {
-    container.addEventListener(
-      "click",
-      (e) => {
-        const tile = e.target.closest(selector);
-        if (tile) resolve(tile);
-      },
-      { once: true }
-    );
+    function handler(e) {
+      const tile = e.target.closest(selector);
+      if (!tile) return; // a miss shouldn't cost us the listener — keep waiting
+      container.removeEventListener("click", handler);
+      resolve(tile);
+    }
+    container.addEventListener("click", handler);
   });
 }
 
