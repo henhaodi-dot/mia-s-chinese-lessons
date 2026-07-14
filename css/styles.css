@@ -502,6 +502,36 @@ button {
   50% { transform: scale(1.15); }
 }
 
+/* ---------- Garden tap-to-review outcomes (v2.3) ---------- */
+
+.review-grow-pulse {
+  animation: review-grow-pulse 0.7s ease;
+}
+
+@keyframes review-grow-pulse {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.review-heart-pulse {
+  animation: review-heart-pulse 0.6s ease-in-out 2;
+}
+
+@keyframes review-heart-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+.review-struggle-fade {
+  animation: review-struggle-fade 1.4s ease-in-out infinite;
+}
+
+@keyframes review-struggle-fade {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(4px); }
+}
+
 /* ---------- Paper mode ---------- */
 
 .paper-progress {

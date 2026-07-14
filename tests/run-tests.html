@@ -1,0 +1,42 @@
+<!-- Standalone test runner — no build step, no framework, consistent with
+     the rest of this project. Open via the dev server, e.g.
+     http://localhost:8420/tests/run-tests.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hanzi Garden — reviewRules tests</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #111; color: #eee; }
+  .pass { color: #6f6; }
+  .fail { color: #f66; }
+  #summary { font-size: 18px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+  <div id="summary">Running...</div>
+  <ul id="results"></ul>
+  <script type="module">
+    import { runAll } from "./reviewRules.test.js";
+
+    const results = runAll();
+    const list = document.getElementById("results");
+    const summary = document.getElementById("summary");
+
+    let passCount = 0;
+    for (const r of results) {
+      const li = document.createElement("li");
+      li.className = r.pass ? "pass" : "fail";
+      li.textContent = r.pass ? `PASS — ${r.name}` : `FAIL — ${r.name}: ${r.error}`;
+      list.appendChild(li);
+      if (r.pass) passCount++;
+      console.log(li.textContent);
+    }
+
+    const allPass = passCount === results.length;
+    summary.textContent = `${passCount} / ${results.length} passed`;
+    summary.className = allPass ? "pass" : "fail";
+    window.__testResults = { passCount, total: results.length, allPass, results };
+  </script>
+</body>
+</html>

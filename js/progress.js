@@ -4,7 +4,7 @@
 // (via schemaVersion + a migration step) without touching the rest of the app.
 
 const STORAGE_KEY = "hanziGardenProgress";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 // ---------- local-date helpers ----------
 // Everything in this app keys off the device's local calendar date, never
@@ -83,6 +83,12 @@ function migrate(progress) {
     // untouched, not get silently reset to v2's new default.
     if (!progress.sessionLog) progress.sessionLog = [];
   }
+
+  // v3 adds: per-character hearts (cumulative), heartsToday + heartsTodayDate
+  // (device-local daily cap tracking), and visitors[] — all read via
+  // reviewRules.js, which already treats undefined the same as "zero/none"
+  // everywhere it's used. No per-character loop needed; existing box/
+  // nextDue/shaky data is untouched either way.
 
   progress.schemaVersion = SCHEMA_VERSION;
   return progress;

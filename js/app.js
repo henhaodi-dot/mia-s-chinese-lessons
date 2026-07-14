@@ -9,6 +9,7 @@ import { runDailySession } from "./session.js";
 import { updatePandaIdleOrSleep, renderStreakCalendar, showCardModal, hideCardModal } from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPaperMode } from "./paper.js";
+import { runGardenTapReview } from "./gardenReview.js";
 
 // Placeholder growth-stage visuals — replaced with real garden illustrations
 // in the "garden home screen" build step. Stage 0 is the same-day seed
@@ -66,9 +67,17 @@ function renderGardenGrid() {
       <span class="plant-emoji">${STAGE_EMOJI[stage]}</span>
       <span class="plant-char">${char}</span>
     `;
-    tile.addEventListener("click", () => showCardModal(char, charMap));
+    tile.addEventListener("click", () => handlePlantTap(char));
     grid.appendChild(tile);
   }
+}
+
+async function handlePlantTap(char) {
+  await unlockAudio();
+  await runGardenTapReview(char, charMap, progress);
+  renderGardenGrid();
+  renderStreakCalendar(progress);
+  updatePandaIdleOrSleep(progress, charMap);
 }
 
 function renderCardGrid() {
