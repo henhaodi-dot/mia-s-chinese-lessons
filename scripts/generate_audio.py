@@ -50,6 +50,9 @@ def collect_lines():
         lines.append((f"char_{char}", entry["char"]))
         lines.append((f"word_{char}", entry["word"]))
         lines.append((f"sentence_{char}", entry["sentence"]))
+        # G8 "feed the panda": a generic carrier phrase works for any word,
+        # since not every character's word is edible (e.g. "我们", "的").
+        lines.append((f"feedRequest_{char}", f"我想要{entry['word']}！"))
 
     ui_lines = json.loads(UI_LINES_FILE.read_text(encoding="utf-8"))
     for key, entry in ui_lines.items():

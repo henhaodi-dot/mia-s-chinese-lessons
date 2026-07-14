@@ -4,7 +4,7 @@
 // (via schemaVersion + a migration step) without touching the rest of the app.
 
 const STORAGE_KEY = "hanziGardenProgress";
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // ---------- local-date helpers ----------
 // Everything in this app keys off the device's local calendar date, never
@@ -40,13 +40,14 @@ function makeDefaultProgress() {
     schemaVersion: SCHEMA_VERSION,
     pandaName: "熊猫",
     settings: {
-      dailyNewCount: 1,
+      dailyNewCount: 3,
       paused: false,
       startDate: todayLocalDateString(),
     },
     lastSessionDate: null,
     streakCalendar: {}, // { "2026-07-08": true, ... }
-    characters: {}, // char -> { box, nextDue, timesSeen, timesCorrect, dateLearned, source }
+    characters: {}, // char -> { box, nextDue, timesSeen, timesCorrect, dateLearned, source, shaky, gamesSeen }
+    sessionLog: [], // { date, newChars: [char,...], exitStars: {char: 1-3}, throttled: false|"2"|"1" }
   };
 }
 
@@ -71,11 +72,19 @@ export function loadProgress() {
 }
 
 function migrate(progress) {
-  // No migrations needed yet — this is where a future schemaVersion bump
-  // would add a step to upgrade an older blob in place.
-  if (!progress.schemaVersion) {
-    progress.schemaVersion = SCHEMA_VERSION;
+  const fromVersion = progress.schemaVersion || 1;
+
+  if (fromVersion < 2) {
+    // v2 adds: sessionLog (empty is fine, it's just history), and per-
+    // character shaky/gamesSeen (undefined reads the same as "never
+    // tested"/0 everywhere they're used, so existing character records
+    // don't need to be touched). We only ADD missing fields here — a
+    // parent's already-chosen settings (like dailyNewCount) must survive
+    // untouched, not get silently reset to v2's new default.
+    if (!progress.sessionLog) progress.sessionLog = [];
   }
+
+  progress.schemaVersion = SCHEMA_VERSION;
   return progress;
 }
 
@@ -106,6 +115,35 @@ export function seedCharacter(progress, char, { box, source, dateLearned }) {
 
 export function markStreakDay(progress, dateStr) {
   progress.streakCalendar[dateStr] = true;
+}
+
+// ---------- v2: games, exit test, session log ----------
+
+export function recordGameSeen(progress, char) {
+  const state = progress.characters[char];
+  if (!state) return;
+  state.gamesSeen = (state.gamesSeen || 0) + 1;
+}
+
+export function setShaky(progress, char, isShaky) {
+  const state = progress.characters[char];
+  if (!state) return;
+  state.shaky = isShaky;
+}
+
+export function isShaky(progress, char) {
+  return Boolean(progress.characters[char]?.shaky);
+}
+
+export function appendSessionLogEntry(progress, entry) {
+  if (!progress.sessionLog) progress.sessionLog = [];
+  progress.sessionLog.push(entry);
+  // Keep the log from growing without bound — recent history is what's
+  // useful in Parent Corner, not a permanent ledger.
+  const MAX_LOG_ENTRIES = 60;
+  if (progress.sessionLog.length > MAX_LOG_ENTRIES) {
+    progress.sessionLog = progress.sessionLog.slice(-MAX_LOG_ENTRIES);
+  }
 }
 
 // ---------- paper-practice stickers ----------

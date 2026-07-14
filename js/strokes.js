@@ -111,12 +111,15 @@ export function runFaintOutlineTrace(targetEl, char, { onComplete } = {}) {
 }
 
 // Write-from-memory: character and outline both hidden, hints only after
-// several misses so it stays a real memory test.
-export function runWriteFromMemoryQuiz(targetEl, char, { onComplete } = {}) {
+// several misses so it stays a real memory test. showHintAfterMisses is
+// configurable since the exit test (Round 4) wants a stricter 3-miss lock
+// than the gentler daily-review default of 5.
+export function runWriteFromMemoryQuiz(targetEl, char, { onComplete, onMistake, showHintAfterMisses = 5 } = {}) {
   const writer = makeWriter(targetEl, char, { showCharacter: false, showOutline: false });
   writer.quiz({
     leniency: 1.5,
-    showHintAfterMisses: 5,
+    showHintAfterMisses,
+    onMistake: (data) => onMistake?.(data),
     onComplete: (summary) => onComplete?.(summary),
   });
   return writer;

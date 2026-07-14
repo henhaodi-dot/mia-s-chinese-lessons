@@ -30,5 +30,24 @@
 
   "paperPracticeInstruction": { "text": "拿起你的笔，跟着我写三遍吧！", "pinyin": "Ná qǐ nǐ de bǐ, gēnzhe wǒ xiě sān biàn ba!" },
 
-  "cardCollectionIntro": { "text": "这是你的卡片册，每一张都是你学会的字！", "pinyin": "Zhè shì nǐ de kǎpiàn cè, měi yì zhāng dōu shì nǐ xuéhuì de zì!" }
+  "cardCollectionIntro": { "text": "这是你的卡片册，每一张都是你学会的字！", "pinyin": "Zhè shì nǐ de kǎpiàn cè, měi yì zhāng dōu shì nǐ xuéhuì de zì!" },
+
+  "gameInstruction_G1": { "text": "看好啦，选一个字把词补完整！", "pinyin": "Kàn hǎo la, xuǎn yí ge zì bǎ cí bǔ wánzhěng!" },
+  "gameInstruction_G2": { "text": "听听句子，选一个字填进去！", "pinyin": "Tīngting jùzi, xuǎn yí ge zì tián jìnqù!" },
+  "gameInstruction_G3": { "text": "泡泡飞起来啦，找到我说的那个字，戳破它！", "pinyin": "Pàopao fēi qǐlái la, zhǎodào wǒ shuō de nàge zì, chuōpò tā!" },
+  "gameInstruction_G4": { "text": "翻开卡片，找到一样的字和图！", "pinyin": "Fānkāi kǎpiàn, zhǎodào yíyàng de zì hé tú!" },
+  "gameInstruction_G5": { "text": "这些字长得很像，找到我说的那一个！", "pinyin": "Zhèxiē zì zhǎng de hěn xiàng, zhǎodào wǒ shuō de nà yí ge!" },
+  "gameInstruction_G6": { "text": "帮这个字找个好朋友，组成一个词！", "pinyin": "Bāng zhège zì zhǎo ge hǎo péngyou, zǔchéng yí ge cí!" },
+  "gameInstruction_G7": { "text": "听听句子，把这些词排好队！", "pinyin": "Tīngting jùzi, bǎ zhèxiē cí pái hǎo duì!" },
+  "gameInstruction_G8": { "text": "熊猫饿了，喂它正确的字吧！", "pinyin": "Xióngmāo è le, wèi tā zhèngquè de zì ba!" },
+
+  "exitTestIntro": { "text": "考考你！", "pinyin": "Kǎokao nǐ!" },
+  "relearnLine": { "text": "再看一遍，马上就记住了！", "pinyin": "Zài kàn yí biàn, mǎshàng jiù jìzhù le!" },
+
+  "star_1": { "text": "又学会了一点，加油！", "pinyin": "Yòu xuéhuì le yìdiǎn, jiāyóu!" },
+  "star_2": { "text": "真不错，你记住了！", "pinyin": "Zhēn búcuò, nǐ jìzhù le!" },
+  "star_3": { "text": "太厉害了，记得又快又牢！", "pinyin": "Tài lìhai le, jìde yòu kuài yòu láo!" },
+
+  "storyIntro": { "text": "今日小剧场！", "pinyin": "Jīnrì xiǎo jùchǎng!" },
+  "throttleLine": { "text": "今天先把花园浇好水", "pinyin": "Jīntiān xiān bǎ huāyuán jiāo hǎo shuǐ." }
 }

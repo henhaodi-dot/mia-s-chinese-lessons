@@ -1,11 +1,13 @@
-// Orchestrates one full daily session: hello -> watering (reviews) ->
-// plant one seed (new character) -> celebration. This module owns
+// Orchestrates one full daily session (v2): hello -> Round 1 认识 (meet
+// today's new characters) -> Round 2 浇水 (spaced-repetition reviews) ->
+// Round 3 游戏场 (3 rotating mini-games) -> Round 3.5 今日小剧场 (story) ->
+// Round 4 出门考 (exit test) -> celebration with stars. This module owns
 // rendering into #session-content while a session is running.
 //
-// Visuals here are deliberately plain (emoji + big text) — garden art and
-// panda animation states land in a later build step. Stroke animation and
-// tracing (TRACE_HINT, WRITE_MEMORY, and the new-character intro) use the
-// real Hanzi Writer integration in strokes.js.
+// The gap between Round 1 (meeting new characters) and Round 3 (playing
+// with them) is deliberate — Round 2 sits in between so retrieval doesn't
+// happen back-to-back with first exposure. See the design doc in the v2
+// upgrade prompt for why this structure exists.
 
 import { loadCharacterMap } from "./data.js";
 import {
@@ -14,14 +16,27 @@ import {
   markStreakDay,
   seedCharacter,
   saveProgress,
+  appendSessionLogEntry,
 } from "./progress.js";
-import { buildDueQueue, pickTodaysNewCharacter, growthStageFor, growAfterCorrect, shrinkAfterSecondMiss } from "./scheduler.js";
-import { pickQuizType, pickDistractors, pickStrongestDistractors, QUIZ_TYPES } from "./quiz.js";
+import {
+  buildDueQueue,
+  pickTodaysNewCharacters,
+  countAllDue,
+  throttledNewCountCap,
+  growthStageFor,
+  growAfterCorrect,
+  shrinkAfterSecondMiss,
+} from "./scheduler.js";
+import { pickQuizType, pickDistractors, QUIZ_TYPES } from "./quiz.js";
 import { playLine, playSequence, pickVariant } from "./audio.js";
-import { animateCharacterOnce, runTraceHintQuiz, runFaintOutlineTrace, runWriteFromMemoryQuiz } from "./strokes.js";
+import { animateCharacterOnce, runTraceHintQuiz, runWriteFromMemoryQuiz } from "./strokes.js";
 import { setPandaCheering, animateTodayStamp, triggerConfetti } from "./garden.js";
+import { pickGamesForToday, runGame } from "./games.js";
+import { runExitTest } from "./exitTest.js";
+import { getStoryForTriple, warmStoriesCache } from "./stories.js";
 
 const MAX_REVIEWS_PER_SESSION = 8;
+const SESSION_TIME_LIMIT_MS = 20 * 60 * 1000;
 
 function el(html) {
   const template = document.createElement("template");
@@ -53,6 +68,21 @@ async function waitForTap(container, selector) {
   });
 }
 
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function makeChoiceTile(answerChar, display) {
+  const tile = el(`<button class="choice-tile" type="button"></button>`);
+  tile.dataset.answerChar = answerChar;
+  tile.textContent = display;
+  return tile;
+}
+
 // ---------- hello ----------
 
 async function showHello(progress) {
@@ -65,7 +95,42 @@ async function showHello(progress) {
   await playLine(key);
 }
 
-// ---------- one quiz round for a single character ----------
+// ---------- Round 1: 认识 (meet today's new characters) ----------
+
+async function runMeetRound(container, newEntries) {
+  for (const entry of newEntries) {
+    await playLine(pickVariant("newSeedAnnouncement", 2));
+
+    // picture + audio: character, then word, then sentence.
+    container.replaceChildren(
+      el(`
+        <div class="session-content">
+          <div class="big-emoji">${entry.emoji}</div>
+          <div class="big-character">${entry.char}</div>
+        </div>
+      `)
+    );
+    await playSequence([`char_${entry.char}`, `word_${entry.char}`, `sentence_${entry.char}`]);
+
+    // stroke animation: once at full speed, once slow with stroke numbers.
+    container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
+    let target = container.querySelector(".writer-target");
+    await animateCharacterOnce(target, entry.char, { speed: 1 });
+    await new Promise((r) => setTimeout(r, 500));
+    await animateCharacterOnce(target, entry.char, { speed: 0.4, withNumbers: true });
+    await new Promise((r) => setTimeout(r, 800));
+
+    // trace with hints, twice.
+    for (let i = 0; i < 2; i++) {
+      container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
+      target = container.querySelector(".writer-target");
+      await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  }
+}
+
+// ---------- one quiz round for a single character (Round 2: watering) ----------
 
 async function runQuizRound(container, char, charMap, progress) {
   const entry = charMap.get(char);
@@ -111,9 +176,6 @@ async function runQuizRound(container, char, charMap, progress) {
     prompt.appendChild(choiceGrid);
   }
 
-  // Start listening for a tap BEFORE awaiting the audio — a child who taps
-  // while the line is still playing should never have that tap silently
-  // dropped just because the listener hadn't been attached yet.
   const tapPromise = waitForTap(container, ".choice-tile");
 
   if (quizType === QUIZ_TYPES.AUDIO_TO_CHAR) {
@@ -130,25 +192,6 @@ async function runQuizRound(container, char, charMap, progress) {
   return isCorrect;
 }
 
-function makeChoiceTile(answerChar, display) {
-  const tile = el(`<button class="choice-tile" type="button"></button>`);
-  tile.dataset.answerChar = answerChar;
-  tile.textContent = display;
-  return tile;
-}
-
-function shuffleInPlace(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-// Tracing quizzes don't really have a binary pass/fail the way multiple
-// choice does — Hanzi Writer already lets her retry each stroke (with hints
-// after enough misses) until she gets it, so simply finishing the quiz
-// counts as a correct round for the outer watering/box-growth logic.
 async function runTraceQuizRound(container, entry, quizType) {
   const prompt = el(`
     <div class="session-content">
@@ -158,9 +201,6 @@ async function runTraceQuizRound(container, entry, quizType) {
   container.appendChild(prompt);
   const target = prompt.querySelector(".writer-target");
 
-  // Set up tracing before awaiting the audio — Hanzi Writer only listens
-  // for strokes once .quiz() has been called, so a child who starts
-  // tracing while the line is still playing shouldn't be ignored.
   const resultPromise = new Promise((resolve) => {
     const onComplete = () => resolve(true);
     if (quizType === QUIZ_TYPES.TRACE_HINT) {
@@ -174,7 +214,7 @@ async function runTraceQuizRound(container, entry, quizType) {
   return resultPromise;
 }
 
-// ---------- watering (reviews) ----------
+// ---------- Round 2: 浇水 (watering / reviews) ----------
 
 async function runWatering(container, dueChars, charMap, progress) {
   const today = todayLocalDateString();
@@ -204,87 +244,84 @@ async function runWatering(container, dueChars, charMap, progress) {
   }
 }
 
-// ---------- plant one seed (new character intro) ----------
+// ---------- Round 3: 游戏场 (game arcade) ----------
 
-async function runNewSeedIntro(container, entry, progress, charMap) {
-  await playLine(pickVariant("newSeedAnnouncement", 2));
-
-  // 1. picture + audio: character, then word, then sentence.
-  container.replaceChildren(
-    el(`
-      <div class="session-content">
-        <div class="big-emoji">${entry.emoji}</div>
-        <div class="big-character">${entry.char}</div>
-      </div>
-    `)
-  );
-  await playSequence([`char_${entry.char}`, `word_${entry.char}`, `sentence_${entry.char}`]);
-
-  // 2. stroke animation: once at full speed, once slow with stroke numbers.
-  container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
-  let target = container.querySelector(".writer-target");
-  await animateCharacterOnce(target, entry.char, { speed: 1 });
-  await new Promise((r) => setTimeout(r, 500));
-  await animateCharacterOnce(target, entry.char, { speed: 0.4, withNumbers: true });
-  await new Promise((r) => setTimeout(r, 800));
-
-  // 3. trace with hints, twice.
-  for (let i = 0; i < 2; i++) {
-    container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
-    target = container.querySelector(".writer-target");
-    await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
-    await new Promise((r) => setTimeout(r, 400));
-  }
-
-  // 4. trace once more with only a faint outline.
-  container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
-  target = container.querySelector(".writer-target");
-  await new Promise((resolve) => runFaintOutlineTrace(target, entry.char, { onComplete: resolve }));
-  await new Promise((r) => setTimeout(r, 400));
-
-  // 5. confidence check: hear the word, tap the matching picture out of 3,
-  // distractors from her strongest known characters so this almost always succeeds.
-  const metPool = buildMetPool(progress, charMap);
-  const distractors = pickStrongestDistractors(entry, metPool, 2);
-  const choices = shuffleInPlace([entry, ...distractors]);
-
-  const confidenceScreen = el(`<div class="session-content"></div>`);
-  const choiceGrid = el(`<div class="choice-grid"></div>`);
-  for (const choice of choices) {
-    choiceGrid.appendChild(makeChoiceTile(choice.char, choice.emoji));
-  }
-  confidenceScreen.appendChild(el(`<div class="big-emoji">🔊</div>`));
-  confidenceScreen.appendChild(choiceGrid);
-  container.replaceChildren(confidenceScreen);
-
-  // Listen for a tap before awaiting the audio, so a tap during playback
-  // isn't silently dropped (see the same fix in runQuizRound above).
-  const tapPromise = waitForTap(container, ".choice-tile");
-  await playLine(`word_${entry.char}`);
-  const tapped = await tapPromise;
-  tapped.classList.add(tapped.dataset.answerChar === entry.char ? "correct" : "incorrect");
-  await new Promise((r) => setTimeout(r, 400));
-
-  // 6. seed-planting: add to progress at box 1, due tomorrow.
+async function runGameArcade(container, newEntries, progress, charMap, sessionStart) {
   const today = todayLocalDateString();
-  seedCharacter(progress, entry.char, { box: 1, source: "daily", dateLearned: today });
-  saveProgress(progress);
+  const games = pickGamesForToday(today);
+  const newChars = newEntries.map((e) => e.char);
 
-  container.replaceChildren(
-    el(`
-      <div class="session-content">
-        <div class="big-emoji">🌱</div>
-        <div class="big-character">${entry.char}</div>
-        <p>种下新的一颗种子啦！</p>
-      </div>
-    `)
+  // Distractors: 1-2 recently reviewed characters, preferring ones marked
+  // shaky from a previous exit test so they get extra practice.
+  const metPool = buildMetPool(progress, charMap).filter((e) => !newChars.includes(e.char));
+  const shakyFirst = shuffleInPlace([...metPool]).sort(
+    (a, b) => (progress.characters[b.char]?.shaky ? 1 : 0) - (progress.characters[a.char]?.shaky ? 1 : 0)
   );
-  await new Promise((r) => setTimeout(r, 1200));
+  const distractorChars = shakyFirst.slice(0, 2).map((e) => e.char);
+
+  for (const gameId of games) {
+    if (Date.now() - sessionStart > SESSION_TIME_LIMIT_MS) {
+      break; // guardrail: she wandered off — skip straight to the exit test
+    }
+    await runGame(gameId, container, { newChars, distractorChars, charMap, progress });
+    saveProgress(progress);
+  }
 }
 
-// ---------- celebration ----------
+// ---------- Round 3.5: 今日小剧场 (daily micro-story) ----------
 
-async function showCelebration(container, progress) {
+async function runStoryRound(container, newEntries, charMap) {
+  const chars = newEntries.map((e) => e.char);
+  const story = getStoryForTriple(chars);
+  if (!story) return; // mismatch (known-list changed since stories.json was built) — skip gracefully
+
+  await playLine("storyIntro");
+
+  const highlighted = story.text.replace(
+    new RegExp(`[${chars.join("")}]`, "g"),
+    (m) => `<span class="story-highlight">${m}</span>`
+  );
+
+  container.replaceChildren(
+    el(`
+      <div class="session-content">
+        <p class="story-text">${highlighted}</p>
+      </div>
+    `)
+  );
+  await playLine(story.audioKey);
+
+  const { question } = story;
+  const choices = shuffleInPlace([...question.options]);
+  const screen = el(`
+    <div class="session-content">
+      <div class="big-emoji">🔊</div>
+      <div class="choice-grid"></div>
+    </div>
+  `);
+  const grid = screen.querySelector(".choice-grid");
+  for (const opt of choices) {
+    const tile = el(`<button class="choice-tile" type="button"></button>`);
+    tile.dataset.answerChar = opt.char;
+    tile.textContent = opt.emoji;
+    grid.appendChild(tile);
+  }
+  container.replaceChildren(screen);
+
+  const tapPromise = waitForTap(container, ".choice-tile");
+  await playLine(question.audioKey);
+  const tapped = await tapPromise;
+  tapped.classList.add(tapped.dataset.answerChar === question.answer ? "correct" : "incorrect");
+  await new Promise((r) => setTimeout(r, 500));
+}
+
+// ---------- Round 4: 出门考 (exit test) + celebration ----------
+
+function starLineKey(stars) {
+  return `star_${stars}`;
+}
+
+async function showCelebration(container, progress, exitStars) {
   const today = todayLocalDateString();
   markStreakDay(progress, today);
   progress.lastSessionDate = today;
@@ -294,17 +331,26 @@ async function showCelebration(container, progress) {
   animateTodayStamp(progress);
   triggerConfetti();
 
+  const starRows = Object.entries(exitStars)
+    .map(([char, stars]) => `<div class="exit-star-row"><span class="big-character" style="font-size:32px">${char}</span> ${"⭐".repeat(stars)}</div>`)
+    .join("");
+
   container.replaceChildren(
     el(`
       <div class="session-content">
         <div class="big-emoji">🎉</div>
         <p>今天的花园浇水完成啦！</p>
+        ${starRows}
         <button class="big-button" type="button">回到花园</button>
       </div>
     `)
   );
+
   const tapPromise = waitForTap(container, ".big-button");
   await playLine(pickVariant("sessionComplete", 3));
+  for (const stars of Object.values(exitStars)) {
+    await playLine(starLineKey(stars));
+  }
   await tapPromise;
   setPandaCheering(false);
 }
@@ -312,7 +358,9 @@ async function showCelebration(container, progress) {
 // ---------- entry point ----------
 
 export async function runDailySession(progress) {
+  const sessionStart = Date.now();
   const charMap = await loadCharacterMap();
+  await warmStoriesCache();
   const sessionScreen = document.getElementById("screen-session");
   const container = document.getElementById("session-content");
   const today = todayLocalDateString();
@@ -322,16 +370,55 @@ export async function runDailySession(progress) {
 
   await showHello(progress);
 
-  const dueChars = buildDueQueue(progress, today, MAX_REVIEWS_PER_SESSION);
-  await runWatering(container, dueChars, charMap, progress);
+  const dueCountToday = countAllDue(progress, today);
+  const throttleCap = throttledNewCountCap(dueCountToday);
 
+  const dueChars = buildDueQueue(progress, today, MAX_REVIEWS_PER_SESSION);
   const allCharacters = Array.from(charMap.values());
-  const newEntry = pickTodaysNewCharacter(progress, allCharacters, today);
-  if (newEntry) {
-    await runNewSeedIntro(container, newEntry, progress, charMap);
+  const newEntries = pickTodaysNewCharacters(progress, allCharacters, today);
+
+  // Round 1: meet today's new characters (before they're added to
+  // progress.characters, so Round 2's review queue can't pick them up
+  // a second time in the same session).
+  if (newEntries.length > 0) {
+    await runMeetRound(container, newEntries);
+    for (const entry of newEntries) {
+      seedCharacter(progress, entry.char, { box: 1, source: "daily", dateLearned: today });
+    }
+    saveProgress(progress);
   }
 
-  await showCelebration(container, progress);
+  // Round 2: watering (reviews).
+  await runWatering(container, dueChars, charMap, progress);
+
+  let exitStars = {};
+  if (newEntries.length > 0) {
+    // Round 3: game arcade (skipped if the session guardrail already
+    // tripped waiting through Round 1/2, so she still gets the exit test).
+    if (Date.now() - sessionStart <= SESSION_TIME_LIMIT_MS) {
+      await runGameArcade(container, newEntries, progress, charMap, sessionStart);
+    }
+
+    // Round 3.5: today's micro-story.
+    if (Date.now() - sessionStart <= SESSION_TIME_LIMIT_MS) {
+      await runStoryRound(container, newEntries, charMap);
+    }
+
+    // Round 4: exit test.
+    const metPool = buildMetPool(progress, charMap);
+    exitStars = await runExitTest(container, newEntries, metPool, progress);
+    saveProgress(progress);
+  }
+
+  appendSessionLogEntry(progress, {
+    date: today,
+    newChars: newEntries.map((e) => e.char),
+    exitStars,
+    throttled: throttleCap !== null ? String(throttleCap) : false,
+  });
+  saveProgress(progress);
+
+  await showCelebration(container, progress, exitStars);
 
   sessionScreen.classList.add("hidden");
 }

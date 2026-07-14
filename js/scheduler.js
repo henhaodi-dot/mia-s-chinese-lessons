@@ -64,21 +64,46 @@ export function buildDueQueue(progress, todayStr, maxItems = 8) {
   return due.slice(0, maxItems).map(([char]) => char);
 }
 
-// Picks the next not-yet-introduced character (by rank) for today's seed,
-// respecting the daily limit and pause toggle. dailyNewCount is how many
-// NEW characters she's allowed in a day total, not per session — so once
-// she's used up today's budget, tapping 浇水时间 again just reviews until
-// tomorrow resets it. Until the budget runs out, each tap can plant one
-// more seed, which is what lets her ask for more by simply tapping again.
-export function pickTodaysNewCharacter(progress, allCharacters, todayStr) {
-  if (progress.settings.paused) return null;
-  if (progress.settings.dailyNewCount < 1) return null;
-
-  const learnedToday = Object.values(progress.characters).filter(
+// How many daily-source characters she's already learned today — the v2
+// session plants all of today's new characters in one go (Round 1), but
+// this still matters for the "tap again later" case and for computing
+// the remaining budget after auto-throttle.
+export function countLearnedToday(progress, todayStr) {
+  return Object.values(progress.characters).filter(
     (state) => state.source === "daily" && state.dateLearned === todayStr
   ).length;
-  if (learnedToday >= progress.settings.dailyNewCount) return null;
+}
+
+// Total due reviews, uncapped — used for the auto-throttle decision, which
+// cares about total workload, not just what fits in one session's cap of 8.
+export function countAllDue(progress, todayStr) {
+  return Object.values(progress.characters).filter((state) => isDue(state, todayStr)).length;
+}
+
+// Auto-throttle: a heavy review day quietly reduces how many new
+// characters get introduced, so the session doesn't balloon past the
+// 12-18 minute target. Returns the throttled cap, or null if not throttled.
+export function throttledNewCountCap(dueCount) {
+  if (dueCount > 22) return 1;
+  if (dueCount > 15) return 2;
+  return null;
+}
+
+// Picks up to `count` not-yet-introduced characters (by rank), respecting
+// the daily limit, auto-throttle, and pause toggle. Returns an array
+// (possibly empty) — Round 1 introduces all of them in one session.
+export function pickTodaysNewCharacters(progress, allCharacters, todayStr) {
+  if (progress.settings.paused) return [];
+
+  let budget = progress.settings.dailyNewCount;
+  const throttleCap = throttledNewCountCap(countAllDue(progress, todayStr));
+  if (throttleCap !== null) budget = Math.min(budget, throttleCap);
+
+  const learnedToday = countLearnedToday(progress, todayStr);
+  const remaining = Math.max(0, budget - learnedToday);
+  if (remaining < 1) return [];
 
   const sorted = [...allCharacters].sort((a, b) => a.rank - b.rank);
-  return sorted.find((entry) => !progress.characters[entry.char]) || null;
+  const candidates = sorted.filter((entry) => !progress.characters[entry.char]);
+  return candidates.slice(0, remaining);
 }

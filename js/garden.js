@@ -4,7 +4,7 @@
 // celebration without a circular import back into app.js.
 
 import { todayLocalDateString } from "./progress.js";
-import { buildDueQueue, pickTodaysNewCharacter } from "./scheduler.js";
+import { buildDueQueue, pickTodaysNewCharacters } from "./scheduler.js";
 import { playLine } from "./audio.js";
 import { animateCharacterOnce } from "./strokes.js";
 
@@ -15,8 +15,8 @@ export function updatePandaIdleOrSleep(progress, charMap) {
   const today = todayLocalDateString();
 
   const dueChars = buildDueQueue(progress, today, 8);
-  const newChar = pickTodaysNewCharacter(progress, Array.from(charMap.values()), today);
-  const nothingToDoToday = dueChars.length === 0 && !newChar;
+  const newChars = pickTodaysNewCharacters(progress, Array.from(charMap.values()), today);
+  const nothingToDoToday = dueChars.length === 0 && newChars.length === 0;
 
   face.classList.remove("cheer", "sleep");
   if (nothingToDoToday) {

@@ -329,6 +329,120 @@ button {
   box-shadow: var(--shadow);
 }
 
+/* ---------- Story round (3.5) ---------- */
+
+.story-text {
+  font-size: 32px;
+  line-height: 1.8;
+  max-width: 600px;
+  text-align: center;
+}
+
+.story-highlight {
+  color: var(--garden-green-dark);
+  font-weight: bold;
+  background: #e8f5e9;
+  border-radius: 8px;
+  padding: 0 4px;
+}
+
+/* ---------- Exit test / celebration stars ---------- */
+
+.exit-star-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+}
+
+/* ---------- Game arcade (Round 3) ---------- */
+
+.bubble-field {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  height: 60vh;
+  min-height: 400px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #cdeaff, #eaf6ff);
+  border-radius: 24px;
+}
+
+.bubble-tile {
+  position: absolute;
+  bottom: -80px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bubble-rise linear forwards;
+}
+
+@keyframes bubble-rise {
+  from { bottom: -80px; }
+  to { bottom: 105%; }
+}
+
+.bubble-pop-correct {
+  animation: bubble-pop 0.3s ease forwards !important;
+  background: #c8f7c5 !important;
+}
+
+.bubble-pop-wrong {
+  animation: bubble-pop 0.3s ease forwards !important;
+  background: #ffd6d6 !important;
+}
+
+@keyframes bubble-pop {
+  to { transform: scale(1.6); opacity: 0; }
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.memory-card {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 18px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  font-size: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memory-card.matched {
+  background: #c8f7c5;
+  opacity: 0.7;
+}
+
+.memory-card-back,
+.memory-card-front {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memory-card-back {
+  background: var(--garden-green);
+  border-radius: 18px;
+  color: white;
+}
+
 /* ---------- Paper mode ---------- */
 
 .paper-progress {
