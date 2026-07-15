@@ -120,6 +120,41 @@ whenever it's present. Parent Corner's "缺少插图的字" (missing illustratio
 section lists every character currently in play that still needs one —
 open it, copy the list, and work through it in batches.
 
+### Batch-generating illustrations with Gemini
+
+`scripts/generate_illustrations.py` fills in `assets/img/` for every
+character automatically, using Gemini's Imagen model.
+
+```
+pip install google-genai Pillow
+python scripts/generate_illustrations.py --api-key YOUR_GEMINI_KEY
+```
+
+It reads `data/characters.json`, skips characters already marked
+`"picturable": false` (pure grammatical particles / measure words /
+demonstratives — there's nothing concrete to draw) and any character that
+already has a PNG, then generates the rest (~4 seconds each, so budget
+about 4 seconds × however many are left). Costs real money per image on
+your Gemini account — run it yourself rather than asking an assistant to
+run it unattended.
+
+After it finishes, open `review/illustration-review.html` in a browser: a
+grid of every generated image plus a list of any picturable character
+still missing one. Click any image that looks wrong to add it to a text
+box at the bottom, then re-run with `--redo` and that character list to
+regenerate just those (see the script's own docstring for the exact
+flags). If a character keeps coming out wrong, add an `"illustrationHint"`
+field to its `characters.json` entry with a more concrete description —
+the script prefers that over the auto-built prompt when present.
+
+`--review-only` rebuilds the review page from whatever images already
+exist, with no API calls — safe to run anytime, including with a fake
+`--api-key` value.
+
+Once you're happy with a batch: `git add assets/img/`, commit, push, and
+— as always — bump the three version markers above so devices actually
+pick up the new pictures.
+
 ## Project layout
 
 ```
@@ -140,7 +175,9 @@ assets/audio/          per-line MP3s (generated); assets/audio/custom/
 assets/img/            character illustrations (optional; emoji is the
                        fallback)
 vendor/                Hanzi Writer, vendored locally
-scripts/               the two setup scripts above, plus dev_server.py
+scripts/               the setup scripts above, plus dev_server.py
                        (a no-cache local server, handy while developing —
                        not needed for actual deployment)
+review/                illustration-review.html (generated, gitignored) —
+                       see "Batch-generating illustrations with Gemini"
 ```
