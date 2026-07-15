@@ -10,6 +10,7 @@ import { updatePandaIdleOrSleep, renderStreakCalendar, showCardModal, hideCardMo
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPaperMode } from "./paper.js";
 import { runGardenTapReview } from "./gardenReview.js";
+import { checkForUpdate } from "./updateCheck.js";
 
 // Placeholder growth-stage visuals — replaced with real garden illustrations
 // in the "garden home screen" build step. Stage 0 is the same-day seed
@@ -138,6 +139,7 @@ function registerServiceWorker() {
 
 async function main() {
   registerServiceWorker();
+  checkForUpdate(); // fire-and-forget — reloads the page itself if a new deploy exists
 
   // Silk requires a user gesture before any audio will play. Rather than
   // remembering to call unlockAudio() from every button that might play a

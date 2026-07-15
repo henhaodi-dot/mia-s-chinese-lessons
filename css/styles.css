@@ -53,6 +53,29 @@ button {
   display: none !important;
 }
 
+/* ---------- Update toast ---------- */
+/* Shown briefly by js/updateCheck.js when a new deploy is detected, right
+   before it reloads the page — see that file for the full flow. */
+
+.update-toast {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--garden-green-dark);
+  color: white;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 15px;
+  animation: toast-slide-down 0.3s ease;
+}
+
+@keyframes toast-slide-down {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
 /* Each quiz round / intro step creates a fresh .session-content element
    (see session.js's `el()` + replaceChildren), so this replays smoothly
    every time without any extra JS bookkeeping. */

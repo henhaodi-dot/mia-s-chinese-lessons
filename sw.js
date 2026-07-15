@@ -1,11 +1,23 @@
 // Service worker: cache-first for the app shell, data, strokes, audio, and
 // images, so the app is fully usable offline after one online load.
 //
-// IMPORTANT: bump CACHE_VERSION on every deploy that changes any cached
-// file. The cache name is derived from it, so a bump makes install() build
-// a fresh cache and activate() clean up the old one — without this, a
-// returning tablet would keep serving stale files forever. See README.md.
-const CACHE_VERSION = "v7";
+// ============================================================
+// REMINDER — bump ALL THREE of these on every deploy that changes any
+// cached file (any HTML/CSS/JS edit, new characters, new audio, new
+// images):
+//   1. CACHE_VERSION below
+//   2. the "v" field in /version.json
+//   3. APP_VERSION in js/version.js
+// (1) makes install() build a fresh cache and activate() delete the old
+// one. (2) and (3) are how js/updateCheck.js detects — on every app open,
+// via a network request that always bypasses every cache — that a new
+// deploy exists even before the service worker itself has updated, so it
+// can proactively reload instead of waiting on the browser's own (slow,
+// throttled) update check. Forgetting any one of the three means a
+// tablet/phone that already installed the app can keep serving stale files
+// far longer than expected. See README.md.
+// ============================================================
+const CACHE_VERSION = "v8";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's
@@ -24,6 +36,8 @@ const SHELL_FILES = [
   "./js/garden.js",
   "./js/gardenReview.js",
   "./js/reviewRules.js",
+  "./js/updateCheck.js",
+  "./js/version.js",
   "./js/paper.js",
   "./js/parent.js",
   "./js/print.js",
@@ -122,6 +136,14 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return; // only handle our own files
+
+  // version.json is how updateCheck.js detects a new deploy exists — it
+  // must always hit the network and must never be cached, or the whole
+  // mechanism just checks a frozen copy of itself forever.
+  if (url.pathname.endsWith("/version.json")) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
 
   event.respondWith(
     (async () => {

@@ -63,23 +63,35 @@ bump the service worker cache version (below), and redeploy.
 3. Confirm the name (汉字花园) and add it. It now opens full-screen, like a
    native app, and works offline after the first load.
 
-## Every deploy needs a cache-version bump
+## Every deploy needs a three-way version bump
 
 `sw.js` caches the app shell, data, stroke files, audio, and images so the
-app works fully offline. The cache name is derived from `CACHE_VERSION` at
-the top of `sw.js`:
+app works fully offline. **On every deploy that changes any cached file**
+(any HTML/CSS/JS edit, new characters, new audio, new images), bump the
+version string in all three of these places:
 
-```js
-const CACHE_VERSION = "v1";
-```
+1. `CACHE_VERSION` at the top of `sw.js`
+2. the `"v"` field in `version.json`
+3. `APP_VERSION` in `js/version.js`
 
-**Bump this string on every deploy that changes any cached file** (any
-HTML/CSS/JS edit, new characters, new audio, new images). Without a bump,
-a tablet that already installed the app will keep serving the old cached
-files indefinitely — the service worker only checks for updates by
-comparing its own script byte-for-byte, and won't know the *data* changed.
-Bumping `CACHE_VERSION` makes `install()` build a fresh cache under a new
-name and `activate()` delete the old one.
+Why three places: (1) is what makes `install()` build a fresh cache under a
+new name and `activate()` delete the old one. But a tablet/phone with the
+app already open won't pick up new JS just because a new service worker
+installed in the background — and browsers only check a service worker
+script for changes occasionally (often once a day), so relying on that
+alone can leave old code running for hours. (2) and (3) close that gap:
+`js/updateCheck.js` fetches `version.json` fresh on every app open (a tiny
+request that always bypasses every cache layer) and compares it to the
+version baked into the JS that's currently running. A mismatch means a new
+deploy exists that hasn't been picked up yet — the app shows a small "有新
+内容，正在更新…" toast, nudges the service worker to update, and reloads once
+the new one has taken over. If `version.json` is unreachable (offline), the
+app just keeps running the cached version silently.
+
+Forgetting any one of the three defeats the others — e.g. bumping
+`CACHE_VERSION` without bumping `version.json` means `updateCheck.js` never
+notices anything changed, and a tablet with the app already open could sit
+on stale JS until it happens to fully close and reopen while online.
 
 ## Replacing an audio clip with your own recording
 
@@ -115,6 +127,8 @@ index.html          the app shell (garden, session, cards, parent corner)
 print.html           standalone 田字格 worksheet generator, for printing
 manifest.json         PWA manifest
 sw.js                 service worker (offline caching)
+version.json           tiny {"v": "..."} file used to detect a new deploy —
+                       see "Every deploy needs a three-way version bump"
 css/                  styles.css (app), print.css (print.html only)
 js/                   ES modules — one file per concern (scheduler, quiz,
                        audio, session, garden, parent, print, etc.)
