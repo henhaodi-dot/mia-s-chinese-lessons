@@ -110,21 +110,29 @@ the most concrete, child-friendly visual that captures it.
 
     full_prompt = STYLE_PROMPT + "\n" + subject_prompt
 
+    # Imagen (generate_images) is being retired August 17, 2026 — using
+    # gemini-2.5-flash-image via generate_content instead, which is Google's
+    # current recommended path for this and isn't on that shutdown clock.
     try:
-        response = client.models.generate_images(
-            model="imagen-3.0-generate-002",
-            prompt=full_prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                aspect_ratio="1:1",
-                safety_filter_level="BLOCK_ONLY_HIGH",
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image",
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(aspect_ratio="1:1"),
             ),
         )
 
-        if not response.generated_images:
-            return (ch, False, "No image returned — possibly blocked by safety filter")
+        image_bytes = None
+        candidates = response.candidates or []
+        for part in (candidates[0].content.parts if candidates and candidates[0].content else []):
+            if getattr(part, "inline_data", None):
+                image_bytes = part.inline_data.data
+                break
 
-        image_bytes = response.generated_images[0].image.image_bytes
+        if not image_bytes:
+            return (ch, False, "No image returned — possibly blocked by the safety filter")
+
         img = Image.open(BytesIO(image_bytes))
         img = img.resize((IMAGE_SIZE, IMAGE_SIZE), Image.LANCZOS)
 
