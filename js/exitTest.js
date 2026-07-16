@@ -64,6 +64,7 @@ async function runWriteFromMemoryPart(container, entry) {
   });
 
   await playLine("exitTestIntro");
+  await playLine(`char_${entry.char}`);
   await resultPromise;
   return { missed: hintUsed };
 }
