@@ -6,16 +6,11 @@ import { loadProgress, todayLocalDateString } from "./progress.js";
 import { growthStageFor, isDue } from "./scheduler.js";
 import { unlockAudio } from "./audio.js";
 import { runDailySession } from "./session.js";
-import { updatePandaIdleOrSleep, renderStreakCalendar, showCardModal, hideCardModal } from "./garden.js";
+import { updatePandaIdleOrSleep, renderStreakCalendar, showCardModal, hideCardModal, STAGE_EMOJI } from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
-import { runPaperMode } from "./paper.js";
+import { runPracticeStudio } from "./studio.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
-
-// Placeholder growth-stage visuals — replaced with real garden illustrations
-// in the "garden home screen" build step. Stage 0 is the same-day seed
-// cosmetic described in scheduler.js.
-const STAGE_EMOJI = ["🌰", "🌱", "🌿", "🌷", "🌸", "🌟"];
 
 let progress;
 let charMap;
@@ -162,10 +157,10 @@ async function main() {
   });
   document.getElementById("btn-cards-back").addEventListener("click", () => history.back());
 
-  document.getElementById("btn-paper").addEventListener("click", async () => {
+  document.getElementById("btn-studio").addEventListener("click", async () => {
     await unlockAudio();
-    history.pushState({ hanziGardenScreen: "screen-paper" }, "");
-    await runPaperMode(progress, charMap);
+    history.pushState({ hanziGardenScreen: "screen-studio" }, "");
+    await runPracticeStudio(progress, charMap);
     renderGardenGrid();
     renderStreakCalendar(progress);
     updatePandaIdleOrSleep(progress, charMap);

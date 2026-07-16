@@ -8,6 +8,11 @@ import { buildDueQueue, pickTodaysNewCharacters } from "./scheduler.js";
 import { playLine } from "./audio.js";
 import { animateCharacterOnce } from "./strokes.js";
 
+// Growth-stage visuals — index matches growthStageFor()'s 0-5 box range.
+// Stage 0 is the same-day seed cosmetic described in scheduler.js. Shared
+// between the garden grid and the practice studio's character picker.
+export const STAGE_EMOJI = ["🌰", "🌱", "🌿", "🌷", "🌸", "🌟"];
+
 // ---------- panda mascot ----------
 
 export function updatePandaIdleOrSleep(progress, charMap) {

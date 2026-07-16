@@ -555,12 +555,7 @@ button {
   50% { opacity: 1; transform: translateY(4px); }
 }
 
-/* ---------- Paper mode ---------- */
-
-.paper-progress {
-  font-size: 16px;
-  color: #888;
-}
+/* ---------- Practice studio (写字时间, v2.3) ---------- */
 
 .sticker-pop {
   animation: sticker-pop 0.6s ease-out;
@@ -570,6 +565,87 @@ button {
   0% { transform: scale(0.2) rotate(-15deg); opacity: 0; }
   70% { transform: scale(1.2) rotate(8deg); opacity: 1; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.studio-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 700px;
+}
+
+.studio-ink-bottle {
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.studio-picker-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  width: 100%;
+  padding: 4px 4px 20px;
+  overflow-y: auto;
+}
+
+.studio-picker-tile {
+  min-height: var(--touch-min);
+  background: var(--card-bg);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+}
+
+.studio-picker-char {
+  font-size: 34px;
+}
+
+.studio-picker-stage {
+  font-size: 15px;
+}
+
+.studio-mode-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.studio-speed-row {
+  display: flex;
+  gap: 12px;
+}
+
+.studio-speed-btn {
+  padding: 10px 18px;
+  font-size: 18px;
+  opacity: 0.5;
+}
+
+.studio-speed-btn.active {
+  opacity: 1;
+  background: var(--garden-green);
+  color: white;
+}
+
+.studio-copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.studio-copy-reference {
+  font-size: 100px;
+  color: #bbb;
 }
 
 /* ---------- Card collection ---------- */

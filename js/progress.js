@@ -152,7 +152,7 @@ export function appendSessionLogEntry(progress, entry) {
   }
 }
 
-// ---------- paper-practice stickers ----------
+// ---------- practice stickers (studio + any future source) ----------
 // Additive/optional field: older saved blobs simply have no stickers yet,
 // which reads the same as "zero" everywhere this is used.
 
@@ -163,6 +163,35 @@ export function awardSticker(progress, char) {
 
 export function getStickerCount(progress, char) {
   return progress.stickers?.[char] || 0;
+}
+
+// ---------- practice studio ink bottle (v2.3) ----------
+// Device-local, resets daily, purely decorative — never touches box,
+// hearts, or the review schedule. Every completed 描/写 in the studio adds
+// one drop; a full bottle (10) awards a sticker to whatever character was
+// being practiced and empties back to 0, so it can fill again the same day.
+
+export const INK_BOTTLE_CAPACITY = 10;
+
+// Returns { drops, bottleFilled } — bottleFilled is true exactly on the
+// drop that fills the bottle, so the caller knows to award a sticker.
+export function addInkDrop(progress, todayStr) {
+  if (progress.inkDropsDate !== todayStr) {
+    progress.inkDrops = 0;
+    progress.inkDropsDate = todayStr;
+  }
+  progress.inkDrops = (progress.inkDrops || 0) + 1;
+
+  if (progress.inkDrops >= INK_BOTTLE_CAPACITY) {
+    progress.inkDrops = 0;
+    return { drops: 0, bottleFilled: true };
+  }
+  return { drops: progress.inkDrops, bottleFilled: false };
+}
+
+export function getInkDrops(progress, todayStr) {
+  if (progress.inkDropsDate !== todayStr) return 0;
+  return progress.inkDrops || 0;
 }
 
 // ---------- export / import (Parent Corner sync path) ----------
