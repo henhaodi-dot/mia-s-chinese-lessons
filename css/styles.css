@@ -149,6 +149,16 @@ button {
   opacity: 0.6;
 }
 
+.panda-face.gesture {
+  animation: panda-gesture 1.2s ease-in-out;
+}
+
+@keyframes panda-gesture {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  30% { transform: rotate(-12deg) translateX(-6px); }
+  60% { transform: rotate(-12deg) translateX(-6px); }
+}
+
 /* ---------- Streak calendar ---------- */
 
 .streak-calendar {
@@ -250,12 +260,41 @@ button {
   top: -6px;
   right: -4px;
   font-size: 18px;
+  animation: due-drop-pulse 1.6s ease-in-out infinite;
 }
 
 /* A due plant looks gently thirsty — a small droop, never punishing. */
 .plant-tile.due .plant-emoji {
   display: inline-block;
   transform: rotate(-8deg) translateY(2px);
+}
+
+/* Soft shimmer on the whole tile so thirsty plants visibly invite a tap
+   first, without being alarming or urgent. */
+.plant-tile.shimmer {
+  animation: plant-shimmer 2.2s ease-in-out infinite;
+}
+
+@keyframes plant-shimmer {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 4px 16px rgba(100, 181, 246, 0.55); }
+}
+
+@keyframes due-drop-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+.plant-hearts {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.plant-visitors {
+  position: absolute;
+  bottom: -6px;
+  left: -4px;
+  font-size: 15px;
 }
 
 /* ---------- Start button ---------- */
@@ -853,6 +892,40 @@ button {
   font-size: 16px;
   resize: vertical;
   box-sizing: border-box;
+}
+
+.parent-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.history-date {
+  color: #999;
+  min-width: 90px;
+}
+
+.history-chars {
+  font-size: 18px;
+}
+
+.history-char {
+  margin-right: 6px;
+}
+
+.history-note {
+  color: #999;
+  font-size: 12px;
 }
 
 .parent-field {

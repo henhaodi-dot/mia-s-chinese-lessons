@@ -6,11 +6,20 @@ import { loadProgress, todayLocalDateString } from "./progress.js";
 import { growthStageFor, isDue } from "./scheduler.js";
 import { unlockAudio } from "./audio.js";
 import { runDailySession } from "./session.js";
-import { updatePandaIdleOrSleep, renderStreakCalendar, showCardModal, hideCardModal, STAGE_EMOJI } from "./garden.js";
+import {
+  updatePandaIdleOrSleep,
+  renderStreakCalendar,
+  showCardModal,
+  hideCardModal,
+  STAGE_EMOJI,
+  VISITOR_EMOJI,
+  gesturePandaTowardThirsty,
+} from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPracticeStudio } from "./studio.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
+import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
 
 let progress;
 let charMap;
@@ -55,13 +64,25 @@ function renderGardenGrid() {
     const entry = charMap.get(char);
     const stage = growthStageFor(state, today);
     const due = isDue(state, today);
+    const heartsToday = getHeartsToday(state, today);
+    const visitors = state.visitors || [];
 
     const tile = document.createElement("button");
     tile.type = "button";
-    tile.className = "plant-tile" + (due ? " due" : "");
+    tile.className = "plant-tile" + (due ? " due shimmer" : "");
     tile.innerHTML = `
       <span class="plant-emoji">${STAGE_EMOJI[stage]}</span>
       <span class="plant-char">${char}</span>
+      ${
+        heartsToday > 0
+          ? `<span class="plant-hearts">${"❤️".repeat(heartsToday)}${"🤍".repeat(HEART_DAILY_CAP - heartsToday)}</span>`
+          : ""
+      }
+      ${
+        visitors.length > 0
+          ? `<span class="plant-visitors">${visitors.map((id) => VISITOR_EMOJI[id] || "").join("")}</span>`
+          : ""
+      }
     `;
     tile.addEventListener("click", () => handlePlantTap(char));
     grid.appendChild(tile);
@@ -70,10 +91,13 @@ function renderGardenGrid() {
 
 async function handlePlantTap(char) {
   await unlockAudio();
-  await runGardenTapReview(char, charMap, progress);
+  const outcome = await runGardenTapReview(char, charMap, progress);
   renderGardenGrid();
   renderStreakCalendar(progress);
   updatePandaIdleOrSleep(progress, charMap);
+  if (outcome === "content") {
+    gesturePandaTowardThirsty(progress, todayLocalDateString());
+  }
 }
 
 function renderCardGrid() {

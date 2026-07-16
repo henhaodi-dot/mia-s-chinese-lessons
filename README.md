@@ -106,6 +106,24 @@ voice recording:
 3. The app checks `assets/audio/custom/` first for every line and falls
    back to the generated file automatically — no code changes needed.
 
+## Extending the daily micro-story (今日小剧场)
+
+`data/stories.json` has a short story + comprehension question for each of
+the first 20 new-character triples at the default pace (3 new characters a
+day, no throttle — ranks 1-60). `js/stories.js` looks a story up by the
+exact rank-sorted triple of characters being taught that day; if a family's
+actual pace differs (a different daily count, or auto-throttle kicking in
+on a heavy review day) or the triple simply isn't written yet, Round 3.5
+just skips silently — this is by design, not a bug, and Parent Corner's
+"今日小剧场" section tells you whether *today's* upcoming triple has one.
+
+To add more: each entry needs `chars` (the triple, rank order), `text` (the
+story), `audioKey`, and a `question` with `audioKey`, three `{char, emoji}`
+`options` (usually just that day's own three characters), and the correct
+`answer`. Add the `audioKey`/`question.audioKey` text to `data/ui_lines.json`
+like any other line, then run `scripts/generate_audio.py` — no code changes
+needed, since it already reads every `ui_lines.json` entry.
+
 ## Adding character illustrations
 
 The app ships with emoji as a placeholder picture for every character.

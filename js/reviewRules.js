@@ -25,6 +25,13 @@ function resetHeartsTodayIfStale(charState, todayStr) {
   }
 }
 
+// Read-only — for UI (the garden tile's decorative heart track). Never
+// mutates, so it's safe to call on every render.
+export function getHeartsToday(charState, todayStr) {
+  if (charState.heartsTodayDate !== todayStr) return 0;
+  return charState.heartsToday || 0;
+}
+
 function unlockVisitors(charState) {
   if (!charState.visitors) charState.visitors = [];
   const newlyUnlocked = [];

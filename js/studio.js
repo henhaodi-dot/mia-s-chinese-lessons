@@ -81,7 +81,7 @@ export async function runPracticeStudio(progress, charMap) {
         </div>
       `)
     );
-    await playLine(pickVariant("praise", 5));
+    await playLine("inkBottleFull");
     await new Promise((r) => setTimeout(r, 1400));
   }
 
@@ -222,4 +222,5 @@ export async function runPracticeStudio(progress, charMap) {
   }
 
   showPicker();
+  playLine("studioWelcome"); // fire-and-forget — only on this first open, not every return-to-picker
 }

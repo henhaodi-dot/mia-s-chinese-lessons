@@ -1,1 +1,22 @@
-[]
+[
+  {"chars":["我","你","的"],"text":"我和你是好朋友。这是你的，那是我的。","audioKey":"story_01","question":{"audioKey":"storyQ_01","options":[{"char":"我","emoji":"🙋"},{"char":"你","emoji":"👉"},{"char":"的","emoji":"🔸"}],"answer":"你"}},
+  {"chars":["是","不","在"],"text":"小猫是小小的，不是大大的。它在家里睡觉。","audioKey":"story_02","question":{"audioKey":"storyQ_02","options":[{"char":"是","emoji":"🟰"},{"char":"不","emoji":"🚫"},{"char":"在","emoji":"📍"}],"answer":"在"}},
+  {"chars":["有","这","那"],"text":"我有一只小狗。这是小狗的碗，那是小猫的碗。","audioKey":"story_03","question":{"audioKey":"storyQ_03","options":[{"char":"有","emoji":"🈶"},{"char":"这","emoji":"👆"},{"char":"那","emoji":"👈"}],"answer":"那"}},
+  {"chars":["妈","爸","家"],"text":"妈妈和爸爸都在家。我爱我的家。","audioKey":"story_04","question":{"audioKey":"storyQ_04","options":[{"char":"妈","emoji":"👩"},{"char":"爸","emoji":"👨"},{"char":"家","emoji":"🏠"}],"answer":"妈"}},
+  {"chars":["他","她","爱"],"text":"他爱他的小狗，她爱她的小猫。","audioKey":"story_05","question":{"audioKey":"storyQ_05","options":[{"char":"他","emoji":"👦"},{"char":"她","emoji":"👧"},{"char":"爱","emoji":"❤️"}],"answer":"爱"}},
+  {"chars":["好","大","小"],"text":"大狗和小狗都是好朋友。","audioKey":"story_06","question":{"audioKey":"storyQ_06","options":[{"char":"好","emoji":"👍"},{"char":"大","emoji":"🐘"},{"char":"小","emoji":"🐭"}],"answer":"大"}},
+  {"chars":["猫","狗","水"],"text":"猫和狗都爱喝水。","audioKey":"story_07","question":{"audioKey":"storyQ_07","options":[{"char":"猫","emoji":"🐱"},{"char":"狗","emoji":"🐶"},{"char":"水","emoji":"💧"}],"answer":"水"}},
+  {"chars":["吃","饭","喝"],"text":"我们一起吃饭，一起喝水，真开心。","audioKey":"story_08","question":{"audioKey":"storyQ_08","options":[{"char":"吃","emoji":"😋"},{"char":"饭","emoji":"🍚"},{"char":"喝","emoji":"🥤"}],"answer":"吃"}},
+  {"chars":["天","上","下"],"text":"今天天气真好，小鸟飞上飞下，真开心。","audioKey":"story_09","question":{"audioKey":"storyQ_09","options":[{"char":"天","emoji":"🌤️"},{"char":"上","emoji":"🏫"},{"char":"下","emoji":"🌧️"}],"answer":"上"}},
+  {"chars":["二","三","四"],"text":"一，二，三，四，我们一起数一数！","audioKey":"story_10","question":{"audioKey":"storyQ_10","options":[{"char":"二","emoji":"2️⃣"},{"char":"三","emoji":"3️⃣"},{"char":"四","emoji":"4️⃣"}],"answer":"三"}},
+  {"chars":["五","六","七"],"text":"五，六，七，越数越多！","audioKey":"story_11","question":{"audioKey":"storyQ_11","options":[{"char":"五","emoji":"5️⃣"},{"char":"六","emoji":"6️⃣"},{"char":"七","emoji":"7️⃣"}],"answer":"六"}},
+  {"chars":["八","九","十"],"text":"八，九，十，数到十啦！","audioKey":"story_12","question":{"audioKey":"storyQ_12","options":[{"char":"八","emoji":"8️⃣"},{"char":"九","emoji":"9️⃣"},{"char":"十","emoji":"🔟"}],"answer":"十"}},
+  {"chars":["一","个","两"],"text":"我有一个苹果，你有两个苹果。","audioKey":"story_13","question":{"audioKey":"storyQ_13","options":[{"char":"一","emoji":"1️⃣"},{"char":"个","emoji":"🔘"},{"char":"两","emoji":"✌️"}],"answer":"个"}},
+  {"chars":["岁","了","人"],"text":"我七岁了，是个小小的人。","audioKey":"story_14","question":{"audioKey":"storyQ_14","options":[{"char":"岁","emoji":"🎂"},{"char":"了","emoji":"✅"},{"char":"人","emoji":"🧑"}],"answer":"岁"}},
+  {"chars":["只","学","今"],"text":"今天我在学校，看见一只小鸟。","audioKey":"story_15","question":{"audioKey":"storyQ_15","options":[{"char":"只","emoji":"🔹"},{"char":"学","emoji":"📚"},{"char":"今","emoji":"📅"}],"answer":"学"}},
+  {"chars":["雨","儿","女"],"text":"下雨了，妈妈的女儿在家里玩。","audioKey":"story_16","question":{"audioKey":"storyQ_16","options":[{"char":"雨","emoji":"🌧️"},{"char":"儿","emoji":"👦"},{"char":"女","emoji":"👧"}],"answer":"雨"}},
+  {"chars":["哥","姐","弟"],"text":"哥哥，姐姐，弟弟，我们是一家人。","audioKey":"story_17","question":{"audioKey":"storyQ_17","options":[{"char":"哥","emoji":"👦"},{"char":"姐","emoji":"👧"},{"char":"弟","emoji":"👦"}],"answer":"姐"}},
+  {"chars":["妹","爷","奶"],"text":"妹妹和爷爷奶奶一起玩。","audioKey":"story_18","question":{"audioKey":"storyQ_18","options":[{"char":"妹","emoji":"👧"},{"char":"爷","emoji":"👴"},{"char":"奶","emoji":"👵"}],"answer":"奶"}},
+  {"chars":["朋","友","头"],"text":"朋友们见面，点点头，说你好。","audioKey":"story_19","question":{"audioKey":"storyQ_19","options":[{"char":"朋","emoji":"🧑‍🤝‍🧑"},{"char":"友","emoji":"🤝"},{"char":"头","emoji":"🗣️"}],"answer":"友"}},
+  {"chars":["眼","耳","口"],"text":"小猫有大眼睛，长耳朵，小小的口。","audioKey":"story_20","question":{"audioKey":"storyQ_20","options":[{"char":"眼","emoji":"👁️"},{"char":"耳","emoji":"👂"},{"char":"口","emoji":"👄"}],"answer":"眼"}}
+]

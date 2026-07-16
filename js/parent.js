@@ -8,9 +8,11 @@ import {
   exportProgressJson,
   importProgressJson,
 } from "./progress.js";
-import { growthStageFor, isDue } from "./scheduler.js";
+import { growthStageFor, isDue, pickTodaysNewCharacters } from "./scheduler.js";
+import { getStoryForTriple, warmStoriesCache } from "./stories.js";
 
 const STAGE_NAMES = ["种子", "发芽", "小苗", "花苞", "开花", "金花"];
+const STAR_EMOJI = { 1: "⭐", 2: "⭐⭐", 3: "⭐⭐⭐" };
 
 // ---------- math gate ----------
 
@@ -66,10 +68,9 @@ export function renderParentContent(progress, charMap, onChange) {
         每天新字数量：
         <select id="daily-new-count">
           <option value="0">0（暂停学新字）</option>
-          <option value="1">1（默认）</option>
+          <option value="1">1</option>
           <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="5">5</option>
+          <option value="3">3（默认）</option>
         </select>
       </label>
       <label class="parent-field">
@@ -91,6 +92,16 @@ export function renderParentContent(progress, charMap, onChange) {
       <div class="parent-table-wrap">
         <table class="parent-table" id="progress-table"></table>
       </div>
+    </section>
+
+    <section class="parent-section">
+      <h3>最近的学习记录</h3>
+      <div id="session-history-list" class="parent-history-list"></div>
+    </section>
+
+    <section class="parent-section">
+      <h3>今日小剧场</h3>
+      <p id="story-coverage-status" class="parent-hint">正在检查…</p>
     </section>
 
     <section class="parent-section">
@@ -117,7 +128,9 @@ export function renderParentContent(progress, charMap, onChange) {
 
   fillSettingsFields(progress);
   renderProgressTable(progress, charMap);
+  renderSessionHistory(progress, charMap);
   checkMissingImages(progress, charMap);
+  checkStoryCoverage(progress, charMap);
   wireEvents(progress, charMap, onChange);
 }
 
@@ -163,6 +176,60 @@ function renderProgressTable(progress, charMap) {
       }
     </tbody>
   `;
+}
+
+// Newest first, capped at 10 — sessionLog itself already caps at 60
+// entries, but the parent only needs a recent-activity glance here.
+function renderSessionHistory(progress, charMap) {
+  const container = document.getElementById("session-history-list");
+  const entries = [...(progress.sessionLog || [])].reverse().slice(0, 10);
+
+  if (entries.length === 0) {
+    container.innerHTML = `<p class="empty-state-message">还没有学习记录。</p>`;
+    return;
+  }
+
+  container.innerHTML = entries
+    .map((entry) => {
+      const chars = entry.newChars
+        .map((char) => {
+          const stars = STAR_EMOJI[entry.exitStars?.[char]] || "";
+          return `<span class="history-char">${char}${stars ? ` ${stars}` : ""}</span>`;
+        })
+        .join(" ");
+      const throttleNote = entry.throttled ? `（复习较多，今天少学了新字）` : "";
+      return `
+        <div class="history-row">
+          <span class="history-date">${entry.date}</span>
+          <span class="history-chars">${chars || "（只复习，没有新字）"}</span>
+          <span class="history-note">${throttleNote}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+// Checks whether the very next new-character triple she'll actually be
+// taught already has a written story — a parent-facing heads-up, not
+// something the session itself needs (it already skips gracefully on a
+// miss). warmStoriesCache() is a no-op after the first call anywhere.
+async function checkStoryCoverage(progress, charMap) {
+  await warmStoriesCache();
+  const status = document.getElementById("story-coverage-status");
+  if (!status) return;
+
+  const today = todayLocalDateString();
+  const upcoming = pickTodaysNewCharacters(progress, Array.from(charMap.values()), today).map((e) => e.char);
+
+  if (upcoming.length === 0) {
+    status.textContent = "今天没有新字，所以也不会有今日小剧场。";
+    return;
+  }
+
+  const story = getStoryForTriple(upcoming);
+  status.textContent = story
+    ? `今天要学的字（${upcoming.join("")}）已经配好了故事，浇水时间会播放。`
+    : `今天要学的字（${upcoming.join("")}）还没有配对的故事，今天的浇水时间会跳过这一环节 —— 这不影响学习，只是少一个小惊喜。`;
 }
 
 async function checkMissingImages(progress, charMap) {

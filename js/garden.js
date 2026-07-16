@@ -4,7 +4,7 @@
 // celebration without a circular import back into app.js.
 
 import { todayLocalDateString } from "./progress.js";
-import { buildDueQueue, pickTodaysNewCharacters } from "./scheduler.js";
+import { buildDueQueue, pickTodaysNewCharacters, isDue } from "./scheduler.js";
 import { playLine } from "./audio.js";
 import { animateCharacterOnce } from "./strokes.js";
 
@@ -12,6 +12,11 @@ import { animateCharacterOnce } from "./strokes.js";
 // Stage 0 is the same-day seed cosmetic described in scheduler.js. Shared
 // between the garden grid and the practice studio's character picker.
 export const STAGE_EMOJI = ["🌰", "🌱", "🌿", "🌷", "🌸", "🌟"];
+
+// Visitor decorations unlocked by cumulative hearts — ids match
+// reviewRules.js's VISITOR_THRESHOLDS. Shared between the garden grid and
+// the garden-tap arrival celebration.
+export const VISITOR_EMOJI = { butterfly: "🦋", ladybug: "🐞", firefly: "✨" };
 
 // ---------- panda mascot ----------
 
@@ -36,6 +41,17 @@ export function setPandaCheering(isCheering) {
   const face = document.getElementById("panda-face");
   face.classList.remove("sleep");
   face.classList.toggle("cheer", isCheering);
+}
+
+// Called after a garden-tap review lands on "content" (already at the daily
+// heart cap for that plant) — a quick nudge toward the fact there's other
+// thirsty work to do, without saying anything or demanding it.
+export function gesturePandaTowardThirsty(progress, todayStr) {
+  const hasThirsty = Object.values(progress.characters).some((state) => isDue(state, todayStr));
+  if (!hasThirsty) return;
+  const face = document.getElementById("panda-face");
+  face.classList.add("gesture");
+  setTimeout(() => face.classList.remove("gesture"), 1200);
 }
 
 // ---------- confetti ----------
