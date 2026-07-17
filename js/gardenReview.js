@@ -13,7 +13,7 @@ import { isDue } from "./scheduler.js";
 import { playLine, pickVariant } from "./audio.js";
 import { runWriteFromMemoryQuiz } from "./strokes.js";
 import { applyGardenTapOutcome } from "./reviewRules.js";
-import { VISITOR_EMOJI } from "./garden.js";
+import { VISITOR_EMOJI, charPictureHtml } from "./garden.js";
 
 const HINT_THRESHOLD = 2;
 const STRUGGLE_HINTED_STROKE_LIMIT = 1;
@@ -67,7 +67,7 @@ async function showOutcomeScreen(container, entry, outcomeResult) {
   if (outcomeResult.outcome === "grew") {
     container.replaceChildren(el(`
       <div class="session-content">
-        <div class="big-emoji review-grow-pulse">${entry.emoji}</div>
+        <div class="big-emoji review-grow-pulse">${charPictureHtml(entry)}</div>
         <div class="big-character">${entry.char}</div>
       </div>
     `));
@@ -88,7 +88,7 @@ async function showOutcomeScreen(container, entry, outcomeResult) {
   } else if (outcomeResult.outcome === "content") {
     container.replaceChildren(el(`
       <div class="session-content">
-        <div class="big-emoji">${entry.emoji}</div>
+        <div class="big-emoji">${charPictureHtml(entry)}</div>
         <div class="big-character">${entry.char}</div>
       </div>
     `));

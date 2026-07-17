@@ -30,7 +30,7 @@ import {
 import { pickQuizType, pickDistractors, QUIZ_TYPES } from "./quiz.js";
 import { playLine, playSequence, pickVariant } from "./audio.js";
 import { animateCharacterOnce, runTraceHintQuiz, runWriteFromMemoryQuiz } from "./strokes.js";
-import { setPandaCheering, animateTodayStamp, triggerConfetti } from "./garden.js";
+import { setPandaCheering, animateTodayStamp, triggerConfetti, charPictureHtml } from "./garden.js";
 import { pickGamesForToday, runGame } from "./games.js";
 import { runExitTest } from "./exitTest.js";
 import { getStoryForTriple, warmStoriesCache } from "./stories.js";
@@ -78,7 +78,10 @@ function shuffleInPlace(array) {
 function makeChoiceTile(answerChar, display) {
   const tile = el(`<button class="choice-tile" type="button"></button>`);
   tile.dataset.answerChar = answerChar;
-  tile.textContent = display;
+  // innerHTML, not textContent: `display` is sometimes charPictureHtml()'s
+  // <img> markup, sometimes a plain character/emoji — always our own
+  // trusted static data, never anything user-supplied.
+  tile.innerHTML = display;
   return tile;
 }
 
@@ -104,7 +107,7 @@ async function runMeetRound(container, newEntries) {
     container.replaceChildren(
       el(`
         <div class="session-content">
-          <div class="big-emoji">${entry.emoji}</div>
+          <div class="big-emoji">${charPictureHtml(entry)}</div>
           <div class="big-character">${entry.char}</div>
         </div>
       `)
@@ -163,11 +166,11 @@ async function runQuizRound(container, char, charMap, progress) {
     prompt.appendChild(el(`<div class="big-character">${entry.char}</div>`));
     const choiceGrid = el(`<div class="choice-grid"></div>`);
     for (const choice of choices) {
-      choiceGrid.appendChild(makeChoiceTile(choice.char, choice.emoji));
+      choiceGrid.appendChild(makeChoiceTile(choice.char, charPictureHtml(choice)));
     }
     prompt.appendChild(choiceGrid);
   } else if (quizType === QUIZ_TYPES.PIC_TO_CHAR) {
-    prompt.appendChild(el(`<div class="big-emoji">${entry.emoji}</div>`));
+    prompt.appendChild(el(`<div class="big-emoji">${charPictureHtml(entry)}</div>`));
     const choiceGrid = el(`<div class="choice-grid"></div>`);
     for (const choice of choices) {
       choiceGrid.appendChild(makeChoiceTile(choice.char, choice.char));
@@ -302,7 +305,10 @@ async function runStoryRound(container, newEntries, charMap) {
   for (const opt of choices) {
     const tile = el(`<button class="choice-tile" type="button"></button>`);
     tile.dataset.answerChar = opt.char;
-    tile.textContent = opt.emoji;
+    // stories.json's options only store {char, emoji} — look the full entry
+    // back up so non-picturable characters (e.g. 的, 了) correctly fall
+    // back to their emoji instead of a broken image request.
+    tile.innerHTML = charPictureHtml(charMap.get(opt.char) || opt);
     grid.appendChild(tile);
   }
   container.replaceChildren(screen);

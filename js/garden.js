@@ -18,6 +18,20 @@ export const STAGE_EMOJI = ["🌰", "🌱", "🌿", "🌷", "🌸", "🌟"];
 // the garden-tap arrival celebration.
 export const VISITOR_EMOJI = { butterfly: "🦋", ladybug: "🐞", firefly: "✨" };
 
+// Renders a character's "picture" — a real illustration if one has been
+// generated for it (scripts/generate_illustrations.py), the emoji fallback
+// otherwise. `entry.picturable === false` is the only characters.json
+// entries without one (pure grammatical particles/measure words with no
+// concrete subject to draw) — everything else has a real PNG. Sized via
+// `em` so it automatically matches whatever font-size context it's placed
+// in (.big-emoji, .plant-emoji, .choice-tile, etc.) with no per-caller class.
+export function charPictureHtml(entry) {
+  if (entry.picturable === false) {
+    return entry.emoji;
+  }
+  return `<img src="assets/img/${encodeURIComponent(entry.char)}.png" class="char-picture-img" alt="${entry.char}">`;
+}
+
 // ---------- panda mascot ----------
 
 export function updatePandaIdleOrSleep(progress, charMap) {
@@ -138,7 +152,7 @@ export function showCardModal(char, charMap, { withReplay = false } = {}) {
   const content = document.getElementById("card-modal-content");
 
   content.innerHTML = `
-    <div class="big-emoji" id="card-modal-emoji">${entry.emoji}</div>
+    <div class="big-emoji" id="card-modal-emoji">${charPictureHtml(entry)}</div>
     <div class="big-character">${entry.char}</div>
     <p class="card-pinyin">${entry.pinyin} · ${entry.word}</p>
     ${withReplay ? `<button class="replay-button" type="button" id="btn-replay-stroke" aria-label="再看一次笔顺">▶️</button>` : ""}

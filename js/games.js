@@ -7,6 +7,7 @@
 
 import { playLine, pickVariant } from "./audio.js";
 import { recordGameSeen } from "./progress.js";
+import { charPictureHtml } from "./garden.js";
 
 export const GAME_IDS = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"];
 
@@ -136,7 +137,10 @@ export function getConfusables(char, metPool, count) {
 function makeTile(answerChar, display) {
   const tile = el(`<button class="choice-tile" type="button"></button>`);
   tile.dataset.answerChar = answerChar;
-  tile.textContent = display;
+  // innerHTML, not textContent: `display` is sometimes charPictureHtml()'s
+  // <img> markup, sometimes a plain character/emoji — always our own
+  // trusted static data, never anything user-supplied.
+  tile.innerHTML = display;
   return tile;
 }
 
@@ -309,7 +313,7 @@ async function runG4(container, { newChars, charMap }) {
 
   const cards = shuffle([
     ...entries.map((e) => ({ kind: "char", char: e.char, display: e.char })),
-    ...entries.map((e) => ({ kind: "pic", char: e.char, display: e.emoji })),
+    ...entries.map((e) => ({ kind: "pic", char: e.char, display: charPictureHtml(e) })),
   ]);
 
   const screen = el(`
@@ -459,7 +463,7 @@ async function runG6(container, { newChars, distractorChars, charMap }) {
         container.replaceChildren(
           el(`
             <div class="session-content">
-              <div class="big-emoji">${entry.emoji}</div>
+              <div class="big-emoji">${charPictureHtml(entry)}</div>
               <div class="big-character">${entry.word}</div>
             </div>
           `)
@@ -580,7 +584,7 @@ async function runG8(container, { newChars, distractorChars, charMap }) {
       `);
       container.replaceChildren(screen);
       const grid = screen.querySelector(".choice-grid");
-      for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.emoji));
+      for (const choice of choices) grid.appendChild(makeTile(choice.char, charPictureHtml(choice)));
       const tapPromise = waitForTap(container, ".choice-tile");
       await playLine(`feedRequest_${char}`);
       tile = await tapPromise;

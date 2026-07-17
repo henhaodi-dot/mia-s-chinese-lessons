@@ -4,4 +4,4 @@
 //
 // Bump this alongside version.json's "v" field and sw.js's CACHE_VERSION on
 // every deploy. See the reminder comment at the top of sw.js.
-export const APP_VERSION = "2.5.1";
+export const APP_VERSION = "2.6.0";

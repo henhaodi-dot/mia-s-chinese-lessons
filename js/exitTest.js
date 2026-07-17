@@ -6,6 +6,7 @@
 import { playLine, pickVariant } from "./audio.js";
 import { setShaky } from "./progress.js";
 import { runWriteFromMemoryQuiz, animateCharacterOnce } from "./strokes.js";
+import { charPictureHtml } from "./garden.js";
 
 function el(html) {
   const template = document.createElement("template");
@@ -37,7 +38,10 @@ async function waitForTap(container, selector) {
 function makeTile(answerChar, display) {
   const tile = el(`<button class="choice-tile" type="button"></button>`);
   tile.dataset.answerChar = answerChar;
-  tile.textContent = display;
+  // innerHTML, not textContent: `display` is sometimes charPictureHtml()'s
+  // <img> markup, sometimes a plain character — always our own trusted
+  // static data, never anything user-supplied.
+  tile.innerHTML = display;
   return tile;
 }
 
@@ -81,7 +85,7 @@ async function runMeaningPart(container, entry, distractorEntries) {
 
   if (useAudioToPic) {
     screen.appendChild(el(`<div class="big-emoji">🔊</div>`));
-    for (const choice of choices) choiceGrid.appendChild(makeTile(choice.char, choice.emoji));
+    for (const choice of choices) choiceGrid.appendChild(makeTile(choice.char, charPictureHtml(choice)));
   } else {
     const blankWord = entry.word.replace(entry.char, "＿");
     screen.appendChild(el(`<div class="big-character" style="font-size:56px">${blankWord}</div>`));
@@ -114,7 +118,7 @@ async function showRelearnCard(container, entry) {
   await playLine("relearnLine");
   const screen = el(`
     <div class="session-content">
-      <div class="big-emoji">${entry.emoji}</div>
+      <div class="big-emoji">${charPictureHtml(entry)}</div>
       <div class="writer-target"></div>
     </div>
   `);

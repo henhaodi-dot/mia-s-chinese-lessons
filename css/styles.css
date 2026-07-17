@@ -338,6 +338,17 @@ button {
   font-size: 120px;
 }
 
+/* A real illustration, when one exists (see js/garden.js's
+   charPictureHtml) — sized in em so it matches whatever font-size
+   context it's dropped into (.big-emoji, .plant-emoji, .choice-tile,
+   etc.) without a per-caller size class. */
+.char-picture-img {
+  width: 1em;
+  height: 1em;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
 .big-character {
   font-size: 140px;
   line-height: 1;

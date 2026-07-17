@@ -14,6 +14,7 @@ import {
   STAGE_EMOJI,
   VISITOR_EMOJI,
   gesturePandaTowardThirsty,
+  charPictureHtml,
 } from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPracticeStudio } from "./studio.js";
@@ -122,7 +123,7 @@ function renderCardGrid() {
     card.className = "hanzi-card" + (state.box === 5 ? " golden" : "");
     card.innerHTML = `
       <span class="card-char">${char}</span>
-      <span style="font-size:24px">${entry.emoji}</span>
+      <span style="font-size:24px">${charPictureHtml(entry)}</span>
       <span class="card-pinyin">${entry.pinyin}</span>
       <span class="card-pinyin">${entry.word}</span>
     `;
