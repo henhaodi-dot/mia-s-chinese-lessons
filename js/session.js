@@ -34,6 +34,7 @@ import { setPandaCheering, animateTodayStamp, triggerConfetti, charPictureHtml }
 import { pickGamesForToday, runGame } from "./games.js";
 import { runExitTest } from "./exitTest.js";
 import { getStoryForTriple, warmStoriesCache } from "./stories.js";
+import { ensureMicPermission, runEchoRoundForCharacter } from "./echo.js";
 
 const MAX_REVIEWS_PER_SESSION = 8;
 const SESSION_TIME_LIMIT_MS = 20 * 60 * 1000;
@@ -99,7 +100,12 @@ async function showHello(progress) {
 
 // ---------- Round 1: 认识 (meet today's new characters) ----------
 
-async function runMeetRound(container, newEntries) {
+async function runMeetRound(container, newEntries, progress) {
+  // Asked once for the whole round, not per character — a denied/
+  // unsupported mic just means echoStream stays null and every
+  // runEchoRoundForCharacter call below no-ops.
+  const echoStream = await ensureMicPermission(container, progress);
+
   for (const entry of newEntries) {
     await playLine(pickVariant("newSeedAnnouncement", 2));
 
@@ -129,6 +135,10 @@ async function runMeetRound(container, newEntries) {
       await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
       await new Promise((r) => setTimeout(r, 400));
     }
+
+    // 回声练习: repeat the character, its word, its sentence — no-ops
+    // entirely if echoStream is null (unsupported/denied).
+    await runEchoRoundForCharacter(container, echoStream, entry);
   }
 }
 
@@ -386,7 +396,7 @@ export async function runDailySession(progress) {
   // progress.characters, so Round 2's review queue can't pick them up
   // a second time in the same session).
   if (newEntries.length > 0) {
-    await runMeetRound(container, newEntries);
+    await runMeetRound(container, newEntries, progress);
     for (const entry of newEntries) {
       seedCharacter(progress, entry.char, { box: 1, source: "daily", dateLearned: today });
     }

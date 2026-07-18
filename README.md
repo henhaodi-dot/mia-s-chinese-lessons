@@ -106,6 +106,31 @@ voice recording:
 3. The app checks `assets/audio/custom/` first for every line and falls
    back to the generated file automatically — no code changes needed.
 
+## Echo practice (回声练习)
+
+After each new character in Round 1, she repeats the character/word/
+sentence out loud and hears her own voice played back next to the model
+audio — pure shadowing practice, no speech recognition, no fail state,
+just a participation check (did she make any sound at all).
+
+**Her recordings never leave the device.** They're captured with
+`getUserMedia`/`MediaRecorder` entirely client-side; nothing is uploaded
+anywhere, ever. The first time this feature would run, she sees a friendly
+explain screen (with a small parent-facing text line) before the real
+microphone permission dialog appears, so that dialog is expected rather
+than a surprise mid-session.
+
+If `MediaRecorder` isn't supported, or the microphone permission is denied,
+the whole feature quietly skips itself — Round 1 continues exactly as it
+did before this feature existed, with no error and nothing shown to her.
+
+Currently Phase 1 only: recordings live in memory for that one echo beat
+(played back immediately, then discarded) — no persistence yet, no
+`她的声音` button on cards, no Parent Corner controls. That's the next
+build step. An optional, default-off Phase 2 (on-device recognition
+via Vosk, extra sparkle on a correct match, never a negative signal) is
+planned for later, only after Phase 1 is confirmed working for real.
+
 ## Extending the daily micro-story (今日小剧场)
 
 `data/stories.json` has a short story + comprehension question for each of
