@@ -264,9 +264,21 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
   const totalRoundMs = 45000;
   const targetSwitchMs = 6000;
 
-  function announceTarget() {
+  // playLine shares a single <audio> element across the whole app, so firing
+  // a new announcement while the previous one is still loading/playing would
+  // cut it off mid-word (worse on a slower tablet, where a fetch+decode can
+  // genuinely take a chunk of the 6s interval). Guard against overlap rather
+  // than assuming it always finishes in time.
+  let announcing = false;
+  async function announceTarget() {
     target = pool[Math.floor(Math.random() * pool.length)];
-    playLine(`char_${target}`);
+    if (announcing) return;
+    announcing = true;
+    try {
+      await playLine(`char_${target}`);
+    } finally {
+      announcing = false;
+    }
   }
 
   function spawnBubble() {
