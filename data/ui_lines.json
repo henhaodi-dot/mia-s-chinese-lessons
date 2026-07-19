@@ -113,5 +113,12 @@
   "story_19": { "text": "朋友们见面，点点头，说你好。", "pinyin": "Péngyoumen jiànmiàn, diǎndiǎn tóu, shuō nǐhǎo." },
   "storyQ_19": { "text": "哪个是「友」呀？", "pinyin": "Nǎge shì \"yǒu\" ya?" },
   "story_20": { "text": "小猫有大眼睛，长耳朵，小小的口。", "pinyin": "Xiǎomāo yǒu dà yǎnjing, cháng ěrduo, xiǎoxiǎo de kǒu." },
-  "storyQ_20": { "text": "哪个是「眼」呀？", "pinyin": "Nǎge shì \"yǎn\" ya?" }
+  "storyQ_20": { "text": "哪个是「眼」呀？", "pinyin": "Nǎge shì \"yǎn\" ya?" },
+
+  "arcadeWelcome": { "text": "想玩什么游戏？", "pinyin": "Xiǎng wán shénme yóuxì?" },
+  "arcadeRandomIntro": { "text": "我来帮你选一个！", "pinyin": "Wǒ lái bāng nǐ xuǎn yí ge!" },
+  "arcadeCelebration_1": { "text": "玩得真棒！再来一个？", "pinyin": "Wán de zhēn bàng! Zài lái yí ge?" },
+  "arcadeCelebration_2": { "text": "太好玩啦！还想玩吗？", "pinyin": "Tài hǎowán la! Hái xiǎng wán ma?" },
+  "arcadeCelebration_3": { "text": "你真厉害！再玩一个吧！", "pinyin": "Nǐ zhēn lìhai! Zài wán yí ge ba!" },
+  "arcadePoolTooSmall": { "text": "再学几个字就可以玩游戏啦！", "pinyin": "Zài xué jǐ ge zì jiù kěyǐ wán yóuxì la!" }
 }

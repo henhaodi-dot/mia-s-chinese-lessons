@@ -698,6 +698,55 @@ button {
   color: #bbb;
 }
 
+/* ---------- Game arcade, standalone (游戏场) ---------- */
+
+.arcade-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 700px;
+  gap: 12px;
+}
+
+.arcade-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 700px;
+  padding: 4px 4px 20px;
+  overflow-y: auto;
+}
+
+.arcade-game-tile {
+  min-height: 140px;
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+}
+
+.arcade-game-tile:active {
+  transform: scale(0.96);
+}
+
+.arcade-game-icon {
+  font-size: 46px;
+}
+
+.arcade-game-name {
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+}
+
 /* ---------- Card collection ---------- */
 
 .simple-header {

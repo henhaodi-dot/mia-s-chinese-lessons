@@ -18,6 +18,7 @@ import {
 } from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPracticeStudio } from "./studio.js";
+import { runGameArcade } from "./arcade.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
 import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
@@ -186,6 +187,15 @@ async function main() {
     await unlockAudio();
     history.pushState({ hanziGardenScreen: "screen-studio" }, "");
     await runPracticeStudio(progress, charMap);
+    renderGardenGrid();
+    renderStreakCalendar(progress);
+    updatePandaIdleOrSleep(progress, charMap);
+  });
+
+  document.getElementById("btn-arcade").addEventListener("click", async () => {
+    await unlockAudio();
+    history.pushState({ hanziGardenScreen: "screen-arcade" }, "");
+    await runGameArcade(progress, charMap);
     renderGardenGrid();
     renderStreakCalendar(progress);
     updatePandaIdleOrSleep(progress, charMap);
