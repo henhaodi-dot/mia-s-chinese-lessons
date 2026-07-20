@@ -245,10 +245,8 @@ async function runG2(container, { newChars, distractorChars, charMap }) {
 // ============================================================
 
 async function runG3(container, { newChars, distractorChars, charMap }) {
-  await playLine("gameInstruction_G3");
-
   const pool = [...newChars, ...distractorChars.slice(0, 2)];
-  const entries = pool.map((c) => charMap.get(c));
+  const entries = pool.map((c) => charMap.get(c)).filter(Boolean);
 
   const screen = el(`
     <div class="session-content">
@@ -259,7 +257,7 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
   const field = screen.querySelector(".bubble-field");
 
   let stopped = false;
-  let target = newChars[0];
+  let target = pool[Math.floor(Math.random() * pool.length)];
   let score = 0;
   const totalRoundMs = 45000;
   const targetSwitchMs = 6000;
@@ -282,7 +280,7 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
   }
 
   function spawnBubble() {
-    if (stopped) return;
+    if (stopped || entries.length === 0) return;
     const entry = entries[Math.floor(Math.random() * entries.length)];
     const bubble = el(`<button type="button" class="bubble-tile"></button>`);
     bubble.textContent = entry.char;
@@ -301,8 +299,15 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
     field.appendChild(bubble);
   }
 
-  announceTarget();
+  // Start bubbles rising immediately so she sees the game working right
+  // away, instead of a blank field while the instruction line loads/plays —
+  // on a slow tablet connection that wait alone can read as "broken."
+  // playLine() itself is still sequenced (instruction, then first
+  // announcement) so they never fight over the shared <audio> element.
   const spawnInterval = setInterval(spawnBubble, 900);
+  spawnBubble();
+  await playLine("gameInstruction_G3");
+  announceTarget();
   const targetInterval = setInterval(announceTarget, targetSwitchMs);
 
   await new Promise((resolve) => setTimeout(resolve, totalRoundMs));
@@ -472,16 +477,21 @@ async function runG6(container, { newChars, distractorChars, charMap }) {
       if (isCorrect) {
         tile.classList.add("correct");
         await new Promise((r) => setTimeout(r, 300));
+        // No dedicated illustration exists for the two-character word (only
+        // per-character pictures) — showing entry's own picture here while
+        // narrating the word was a mismatch. Just show the word itself.
         container.replaceChildren(
           el(`
             <div class="session-content">
-              <div class="big-emoji">${charPictureHtml(entry)}</div>
-              <div class="big-character">${entry.word}</div>
+              <div class="big-character" style="font-size:64px">${entry.word}</div>
             </div>
           `)
         );
         await playLine(`word_${char}`);
         await playLine(pickVariant("praise", 5));
+        // Give her a moment to look at and hear the finished word before the
+        // screen jumps to the next character's prompt.
+        await new Promise((r) => setTimeout(r, 1200));
       } else {
         await handleTapResult(container, tile, false);
       }
