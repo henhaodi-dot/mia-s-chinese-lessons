@@ -93,6 +93,13 @@ button {
   inset: 0;
   background: var(--garden-sky);
   z-index: 100;
+  /* Game/session content was sized for a tablet (e.g. .bubble-field's 60vh
+     + min-height:400px, choice grids, memory cards) and can end up taller
+     than a phone's viewport. Without this, a fixed inset:0 overlay clips
+     that overflow with no way to reach it — she'd see only part of the
+     screen and have no scrollbar or pinch-zoom escape hatch. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ---------- Garden header ---------- */
