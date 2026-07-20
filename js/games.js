@@ -156,12 +156,21 @@ async function handleTapResult(container, tile, isCorrect) {
 
 // One correct-or-retry round: shows choices, waits for a correct tap
 // (wrong taps get a warm retry, matching the app's "never a buzzer" rule).
-async function runToCorrectTap(container, buildScreen, correctChar) {
+// `introLine`, if given, plays once AFTER the screen has already rendered
+// (not before) — the game's spoken instruction used to gate the very first
+// render, leaving a blank screen for however long that line took to
+// load/play, which reads as "the game doesn't work" on a slow connection.
+async function runToCorrectTap(container, buildScreen, correctChar, introLine) {
   let tile;
+  let firstPass = true;
   do {
     const screen = buildScreen();
     container.replaceChildren(screen);
     const tapPromise = waitForTap(container, ".choice-tile");
+    if (firstPass && introLine) {
+      await playLine(introLine);
+    }
+    firstPass = false;
     if (screen.dataset.pendingAudio) {
       await playLine(screen.dataset.pendingAudio);
     }
@@ -179,7 +188,7 @@ async function runToCorrectTap(container, buildScreen, correctChar) {
 // ============================================================
 
 async function runG1(container, { newChars, distractorChars, charMap }) {
-  await playLine("gameInstruction_G1");
+  let introLine = "gameInstruction_G1";
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
@@ -202,8 +211,10 @@ async function runG1(container, { newChars, distractorChars, charMap }) {
         screen.dataset.pendingAudio = `word_${char}`;
         return screen;
       },
-      char
+      char,
+      introLine
     );
+    introLine = null;
   }
 }
 
@@ -212,7 +223,7 @@ async function runG1(container, { newChars, distractorChars, charMap }) {
 // ============================================================
 
 async function runG2(container, { newChars, distractorChars, charMap }) {
-  await playLine("gameInstruction_G2");
+  let introLine = "gameInstruction_G2";
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
@@ -235,8 +246,10 @@ async function runG2(container, { newChars, distractorChars, charMap }) {
         screen.dataset.pendingAudio = `sentence_${char}`;
         return screen;
       },
-      char
+      char,
+      introLine
     );
+    introLine = null;
   }
 }
 
@@ -323,8 +336,6 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
 // ============================================================
 
 async function runG4(container, { newChars, charMap }) {
-  await playLine("gameInstruction_G4");
-
   const three = newChars.slice(0, 3);
   const entries = three.map((c) => charMap.get(c));
 
@@ -357,6 +368,10 @@ async function runG4(container, { newChars, charMap }) {
   let matchedCount = 0;
   let busy = false;
   let firstPick = null;
+
+  // Cards are rendered face-down above; playing the instruction here (not
+  // before) means she sees the board right away instead of a blank screen.
+  await playLine("gameInstruction_G4");
 
   await new Promise((resolveGame) => {
     cardEls.forEach((cardEl) => {
@@ -403,8 +418,8 @@ async function runG4(container, { newChars, charMap }) {
 // ============================================================
 
 async function runG5(container, { newChars, charMap, progress }) {
-  await playLine("gameInstruction_G5");
   const metPool = buildMetPool(progress, charMap);
+  let introLine = "gameInstruction_G5";
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
@@ -424,8 +439,10 @@ async function runG5(container, { newChars, charMap, progress }) {
         screen.dataset.pendingAudio = `char_${char}`;
         return screen;
       },
-      char
+      char,
+      introLine
     );
+    introLine = null;
   }
 }
 
@@ -446,7 +463,7 @@ function pickWrongPartners(count, excludeChars, charMap, preferredChars) {
 }
 
 async function runG6(container, { newChars, distractorChars, charMap }) {
-  await playLine("gameInstruction_G6");
+  let introLine = "gameInstruction_G6";
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
@@ -471,6 +488,10 @@ async function runG6(container, { newChars, distractorChars, charMap }) {
       const grid = screen.querySelector(".choice-grid");
       for (const candidate of candidateChars) grid.appendChild(makeTile(candidate, candidate));
       const tapPromise = waitForTap(container, ".choice-tile");
+      if (introLine) {
+        await playLine(introLine);
+        introLine = null;
+      }
       await playLine(`char_${char}`);
       tile = await tapPromise;
       const isCorrect = tile.dataset.answerChar === partner;
@@ -531,7 +552,7 @@ function segmentSentence(sentence, wordDict) {
 }
 
 async function runG7(container, { newChars, charMap }) {
-  await playLine("gameInstruction_G7");
+  let introLine = "gameInstruction_G7";
   const wordDict = buildWordDictionary(charMap);
 
   for (const char of shuffle(newChars)) {
@@ -558,6 +579,10 @@ async function runG7(container, { newChars, charMap }) {
       return tile;
     });
 
+    if (introLine) {
+      await playLine(introLine);
+      introLine = null;
+    }
     await playLine(`sentence_${char}`);
 
     let nextIndex = 0;
@@ -588,7 +613,7 @@ async function runG7(container, { newChars, charMap }) {
 // ============================================================
 
 async function runG8(container, { newChars, distractorChars, charMap }) {
-  await playLine("gameInstruction_G8");
+  let introLine = "gameInstruction_G8";
 
   for (const char of shuffle(newChars)) {
     const entry = charMap.get(char);
@@ -608,6 +633,10 @@ async function runG8(container, { newChars, distractorChars, charMap }) {
       const grid = screen.querySelector(".choice-grid");
       for (const choice of choices) grid.appendChild(makeTile(choice.char, charPictureHtml(choice)));
       const tapPromise = waitForTap(container, ".choice-tile");
+      if (introLine) {
+        await playLine(introLine);
+        introLine = null;
+      }
       await playLine(`feedRequest_${char}`);
       tile = await tapPromise;
       const isCorrect = tile.dataset.answerChar === char;

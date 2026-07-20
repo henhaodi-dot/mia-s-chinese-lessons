@@ -349,6 +349,17 @@ button {
   vertical-align: middle;
 }
 
+/* Choice tiles and memory cards size their font for a single dense CJK
+   glyph, which reads fine that small — a detailed illustration shrunk to
+   the same 1em looks tiny by comparison. Scale pictures up in these two
+   game contexts specifically, while leaving charPictureHtml's default 1em
+   sizing untouched everywhere else (card modal, plant tiles, etc.). */
+.choice-tile .char-picture-img,
+.memory-card-front .char-picture-img {
+  width: 2.2em;
+  height: 2.2em;
+}
+
 .big-character {
   font-size: 140px;
   line-height: 1;
