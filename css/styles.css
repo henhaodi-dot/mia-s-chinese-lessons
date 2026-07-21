@@ -460,8 +460,15 @@ button {
 }
 
 .bubble-tile {
+  /* Spawns already fully visible at its random on-screen position
+     (js/games.js) rather than off-screen and CSS-animated into view — a
+     prior rise animation wasn't reliably progressing on at least some real
+     devices, leaving bubbles parked invisibly off-screen forever even
+     though the game itself (audio, timers) kept running normally.
+     Deliberately no animation gates this element's base visibility —
+     opacity:1 is the resting state, not something an animation has to
+     reach first. */
   position: absolute;
-  bottom: -80px;
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -471,12 +478,6 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: bubble-rise linear forwards;
-}
-
-@keyframes bubble-rise {
-  from { bottom: -80px; }
-  to { bottom: 105%; }
 }
 
 .bubble-pop-correct {

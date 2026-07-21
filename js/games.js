@@ -292,6 +292,14 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
     }
   }
 
+  // Bubbles used to spawn off-screen (bottom:-80px) and rely on a CSS
+  // keyframe animation to carry them into view. On at least some real
+  // devices that animation apparently never actually progresses the
+  // element's rendered position (JS timers, audio, and the game clock all
+  // keep running normally — she'd hear it — but the bubble stays parked off-
+  // screen forever, which reads as "no bubbles at all"). Spawning already
+  // inside the visible field removes that whole dependency: a bubble is
+  // visible the instant it's created, animation or not.
   function spawnBubble() {
     if (stopped || entries.length === 0) return;
     const entry = entries[Math.floor(Math.random() * entries.length)];
@@ -299,7 +307,8 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
     bubble.textContent = entry.char;
     bubble.dataset.answerChar = entry.char;
     bubble.style.left = `${5 + Math.random() * 80}%`;
-    bubble.style.animationDuration = `${3 + Math.random() * 2}s`;
+    bubble.style.top = `${5 + Math.random() * 75}%`;
+    const lifespanMs = 3000 + Math.random() * 2000;
     bubble.addEventListener("click", async () => {
       if (bubble.dataset.popped) return;
       bubble.dataset.popped = "true";
@@ -308,8 +317,12 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
       if (isCorrect) score++;
       setTimeout(() => bubble.remove(), 300);
     });
-    bubble.addEventListener("animationend", () => bubble.remove());
     field.appendChild(bubble);
+    // JS-timed removal (not animationend) — the bubble's lifetime no longer
+    // depends on any CSS animation actually completing.
+    setTimeout(() => {
+      if (!bubble.dataset.popped) bubble.remove();
+    }, lifespanMs);
   }
 
   // Start bubbles rising immediately so she sees the game working right
