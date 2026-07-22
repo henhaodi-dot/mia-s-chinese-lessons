@@ -16,20 +16,24 @@ function showUpdateToast() {
   document.body.appendChild(toast);
 }
 
-async function waitForActivation(registration) {
-  const worker = registration.installing || registration.waiting;
-  if (!worker) return;
-  await new Promise((resolve) => {
+// Waits for the NEW worker to actually take control of this page (fires
+// once, after its activate handler calls clients.claim()) rather than just
+// "finished installing" — that's the real signal a reload will get fresh
+// files instead of silently re-serving the old worker's stale cache.
+// sw.js's install step fetches every character's audio/image/stroke data
+// (~1200 requests) in small batches, which can genuinely take well past a
+// few seconds on a slow phone/tablet connection; 45s gives that a real
+// chance instead of guessing a short timeout and reloading too early.
+function waitForControl() {
+  return new Promise((resolve) => {
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
       resolve();
     };
-    worker.addEventListener("statechange", () => {
-      if (worker.state === "activated") finish();
-    });
-    setTimeout(finish, 8000); // never let a stuck worker block the reload forever
+    navigator.serviceWorker.addEventListener("controllerchange", finish, { once: true });
+    setTimeout(finish, 45000);
   });
 }
 
@@ -46,7 +50,13 @@ export async function checkForUpdate() {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
       await registration.update();
-      await waitForActivation(registration);
+      // Only worth waiting if an update is actually in flight — if
+      // update() found nothing new (e.g. this worker already IS the new
+      // one and only version.json/APP_VERSION were slow to line up),
+      // there's no controllerchange coming and waiting is pure delay.
+      if (registration.installing || registration.waiting) {
+        await waitForControl();
+      }
     }
     location.reload();
   } catch {
