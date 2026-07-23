@@ -332,6 +332,16 @@ button {
 
 .session-content {
   flex: 1;
+  /* Full width is load-bearing, not cosmetic: games wrap their own content
+     in a .session-content, which lands INSIDE the container (itself a
+     .session-content with align-items:center). Without an explicit width
+     that inner wrapper shrink-wraps to its content — and .bubble-field,
+     whose bubbles are position:absolute, has no in-flow content, so it
+     collapsed to width:0 and overflow:hidden clipped every bubble away
+     (blank screen). An explicit width gives percentage-width children like
+     .bubble-field a definite basis. box-sizing:border-box (global) keeps
+     the 24px padding inside this 100%. */
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
