@@ -5,7 +5,7 @@
 // and is responsible for rendering itself into `container`, playing its
 // own instruction audio, and resolving once the child has finished it.
 
-import { playLine, pickVariant } from "./audio.js";
+import { playLine, pickVariant, playChime } from "./audio.js";
 import { recordGameSeen } from "./progress.js";
 import { charPictureHtml } from "./garden.js";
 
@@ -256,45 +256,6 @@ async function runG2(container, { newChars, distractorChars, charMap }) {
 // ============================================================
 // G3 — 泡泡爆爆 (bubble pop)
 // ============================================================
-
-// A short bright "ding" for a correct pop and a soft low note for a wrong
-// one, synthesized with the Web Audio API. Deliberately NOT routed through
-// audio.js's shared <audio> element (which carries the spoken character
-// announcement), so this instant feedback can never cut the narration off —
-// and it needs no sound-effect asset files. The AudioContext is created
-// lazily on the first pop, which is always a tap, satisfying the browser's
-// user-gesture requirement for audio.
-let chimeCtx = null;
-function playChime(kind) {
-  try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    if (!chimeCtx) chimeCtx = new AC();
-    if (chimeCtx.state === "suspended") chimeCtx.resume();
-    const ctx = chimeCtx;
-    const now = ctx.currentTime;
-    const tone = (freq, start, dur, peak) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(peak, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + dur + 0.03);
-    };
-    if (kind === "correct") {
-      tone(880, now, 0.14, 0.2); // A5
-      tone(1318.51, now + 0.1, 0.18, 0.2); // E6 — bright rising ding
-    } else {
-      tone(311.13, now, 0.24, 0.16); // soft low Eb4 — gentle, not a harsh buzzer
-    }
-  } catch {
-    // Audio here is a nicety; never let it break the game.
-  }
-}
 
 // One clearly-bounded popping round for a single target character. The
 // target is fixed for the whole window (no mid-round switching — that was

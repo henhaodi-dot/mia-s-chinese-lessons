@@ -15,6 +15,29 @@ export function isUnlocked() {
   return unlocked;
 }
 
+// A tiny separate Web Audio context for game sound-effects (the correct/
+// wrong pop chimes). Kept apart from the shared <audio> element so a chime
+// can never cut off a spoken line, and — crucially — created and resumed
+// inside unlockAudio (a real user gesture) so it's already "running" before
+// the first pop. A context created lazily mid-game can start suspended and
+// silently swallow the first several sounds, which is exactly what "there's
+// no pop sound" looks like.
+let sfxCtx = null;
+
+function ensureSfxCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!sfxCtx) {
+    try {
+      sfxCtx = new AC();
+    } catch {
+      return null;
+    }
+  }
+  if (sfxCtx.state === "suspended") sfxCtx.resume().catch(() => {});
+  return sfxCtx;
+}
+
 export async function unlockAudio() {
   if (unlocked) return;
   try {
@@ -26,7 +49,41 @@ export async function unlockAudio() {
     // Some browsers throw on playing an empty src — that's fine, the
     // gesture itself is what matters, not this particular call succeeding.
   }
+  ensureSfxCtx(); // warm up the effects context on the same gesture
   unlocked = true;
+}
+
+// A short bright rising "ding" for a correct pop, and a soft descending
+// two-note motif for a wrong one (gentle, deliberately not a harsh buzzer,
+// but clearly distinct from the correct sound). Synthesized on the fly, so
+// no sound-effect asset files are needed. Best-effort — never throws.
+export function playChime(kind) {
+  const ctx = ensureSfxCtx();
+  if (!ctx) return;
+  try {
+    const now = ctx.currentTime;
+    const tone = (freq, start, dur, peak) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(peak, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.03);
+    };
+    if (kind === "correct") {
+      tone(880, now, 0.15, 0.38); // A5
+      tone(1318.51, now + 0.1, 0.22, 0.38); // E6 — bright rising ding
+    } else {
+      tone(392, now, 0.22, 0.34); // G4
+      tone(261.63, now + 0.12, 0.28, 0.32); // C4 — soft descending "aw"
+    }
+  } catch {
+    // Audio here is a nicety; never let it break the game.
+  }
 }
 
 // Custom overrides are checked with a lightweight existence probe the
