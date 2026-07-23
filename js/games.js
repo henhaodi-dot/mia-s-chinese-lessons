@@ -257,90 +257,151 @@ async function runG2(container, { newChars, distractorChars, charMap }) {
 // G3 — 泡泡爆爆 (bubble pop)
 // ============================================================
 
+// A short bright "ding" for a correct pop and a soft low note for a wrong
+// one, synthesized with the Web Audio API. Deliberately NOT routed through
+// audio.js's shared <audio> element (which carries the spoken character
+// announcement), so this instant feedback can never cut the narration off —
+// and it needs no sound-effect asset files. The AudioContext is created
+// lazily on the first pop, which is always a tap, satisfying the browser's
+// user-gesture requirement for audio.
+let chimeCtx = null;
+function playChime(kind) {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!chimeCtx) chimeCtx = new AC();
+    if (chimeCtx.state === "suspended") chimeCtx.resume();
+    const ctx = chimeCtx;
+    const now = ctx.currentTime;
+    const tone = (freq, start, dur, peak) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(peak, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.03);
+    };
+    if (kind === "correct") {
+      tone(880, now, 0.14, 0.2); // A5
+      tone(1318.51, now + 0.1, 0.18, 0.2); // E6 — bright rising ding
+    } else {
+      tone(311.13, now, 0.24, 0.16); // soft low Eb4 — gentle, not a harsh buzzer
+    }
+  } catch {
+    // Audio here is a nicety; never let it break the game.
+  }
+}
+
+// One clearly-bounded popping round for a single target character. The
+// target is fixed for the whole window (no mid-round switching — that was
+// the "I popped the right one and it turned red" confusion), bubbles fade
+// in in place biased toward the target so there's always a right one, and
+// timerFill animates from full to empty to show the time left. Resolves
+// when the window closes.
+function runBubbleRound(field, timerFill, poolEntries, targetEntry, roundMs) {
+  return new Promise((resolve) => {
+    let stopped = false;
+
+    // Drive the countdown bar from JS rather than a CSS transition: a CSS
+    // width/transform transition silently fails to progress in a throttled/
+    // backgrounded renderer (the same class of bug that once left bubbles
+    // frozen off-screen), whereas an interval that writes the width every
+    // 100ms always advances wherever timers run.
+    timerFill.style.width = "100%";
+    const startAt = performance.now();
+    const timerTick = setInterval(() => {
+      const pct = Math.max(0, 1 - (performance.now() - startAt) / roundMs);
+      timerFill.style.width = `${pct * 100}%`;
+    }, 100);
+
+    function spawnBubble() {
+      if (stopped) return;
+      // ~55% target so there's reliably something correct on screen without
+      // the field being trivially all-target.
+      const entry =
+        Math.random() < 0.55
+          ? targetEntry
+          : poolEntries[Math.floor(Math.random() * poolEntries.length)];
+      const bubble = el(`<button type="button" class="bubble-tile"></button>`);
+      bubble.textContent = entry.char;
+      bubble.dataset.answerChar = entry.char;
+      bubble.style.left = `${5 + Math.random() * 80}%`;
+      bubble.style.top = `${8 + Math.random() * 72}%`;
+      const lifespanMs = 2200 + Math.random() * 1500;
+      bubble.addEventListener("click", () => {
+        if (bubble.dataset.popped) return;
+        bubble.dataset.popped = "true";
+        const isCorrect = bubble.dataset.answerChar === targetEntry.char;
+        bubble.classList.add(isCorrect ? "bubble-pop-correct" : "bubble-pop-wrong");
+        playChime(isCorrect ? "correct" : "wrong");
+        setTimeout(() => bubble.remove(), 300);
+      });
+      field.appendChild(bubble);
+      setTimeout(() => {
+        if (!bubble.dataset.popped) bubble.remove();
+      }, lifespanMs);
+    }
+
+    spawnBubble();
+    const spawnInterval = setInterval(spawnBubble, 800);
+    setTimeout(() => {
+      stopped = true;
+      clearInterval(spawnInterval);
+      clearInterval(timerTick);
+      timerFill.style.width = "0%";
+      resolve();
+    }, roundMs);
+  });
+}
+
 async function runG3(container, { newChars, distractorChars, charMap }) {
   const pool = [...newChars, ...distractorChars.slice(0, 2)];
   const entries = pool.map((c) => charMap.get(c)).filter(Boolean);
+  if (entries.length === 0) return;
 
   const screen = el(`
     <div class="session-content">
+      <div class="bubble-hud">
+        <div class="bubble-target">找一找：<span class="bubble-target-char"></span></div>
+        <div class="bubble-timer"><div class="bubble-timer-fill"></div></div>
+      </div>
       <div class="bubble-field"></div>
     </div>
   `);
   container.replaceChildren(screen);
   const field = screen.querySelector(".bubble-field");
+  const targetCharEl = screen.querySelector(".bubble-target-char");
+  const timerFill = screen.querySelector(".bubble-timer-fill");
 
-  let stopped = false;
-  let target = pool[Math.floor(Math.random() * pool.length)];
-  let score = 0;
-  const totalRoundMs = 45000;
-  const targetSwitchMs = 6000;
-
-  // playLine shares a single <audio> element across the whole app, so firing
-  // a new announcement while the previous one is still loading/playing would
-  // cut it off mid-word (worse on a slower tablet, where a fetch+decode can
-  // genuinely take a chunk of the 6s interval). Guard against overlap rather
-  // than assuming it always finishes in time.
-  let announcing = false;
-  async function announceTarget() {
-    target = pool[Math.floor(Math.random() * pool.length)];
-    if (announcing) return;
-    announcing = true;
-    try {
-      await playLine(`char_${target}`);
-    } finally {
-      announcing = false;
-    }
-  }
-
-  // Bubbles used to spawn off-screen (bottom:-80px) and rely on a CSS
-  // keyframe animation to carry them into view. On at least some real
-  // devices that animation apparently never actually progresses the
-  // element's rendered position (JS timers, audio, and the game clock all
-  // keep running normally — she'd hear it — but the bubble stays parked off-
-  // screen forever, which reads as "no bubbles at all"). Spawning already
-  // inside the visible field removes that whole dependency: a bubble is
-  // visible the instant it's created, animation or not.
-  function spawnBubble() {
-    if (stopped || entries.length === 0) return;
-    const entry = entries[Math.floor(Math.random() * entries.length)];
-    const bubble = el(`<button type="button" class="bubble-tile"></button>`);
-    bubble.textContent = entry.char;
-    bubble.dataset.answerChar = entry.char;
-    bubble.style.left = `${5 + Math.random() * 80}%`;
-    bubble.style.top = `${5 + Math.random() * 75}%`;
-    const lifespanMs = 3000 + Math.random() * 2000;
-    bubble.addEventListener("click", async () => {
-      if (bubble.dataset.popped) return;
-      bubble.dataset.popped = "true";
-      const isCorrect = bubble.dataset.answerChar === target;
-      bubble.classList.add(isCorrect ? "bubble-pop-correct" : "bubble-pop-wrong");
-      if (isCorrect) score++;
-      setTimeout(() => bubble.remove(), 300);
-    });
-    field.appendChild(bubble);
-    // JS-timed removal (not animationend) — the bubble's lifetime no longer
-    // depends on any CSS animation actually completing.
-    setTimeout(() => {
-      if (!bubble.dataset.popped) bubble.remove();
-    }, lifespanMs);
-  }
-
-  // Start bubbles rising immediately so she sees the game working right
-  // away, instead of a blank field while the instruction line loads/plays —
-  // on a slow tablet connection that wait alone can read as "broken."
-  // playLine() itself is still sequenced (instruction, then first
-  // announcement) so they never fight over the shared <audio> element.
-  const spawnInterval = setInterval(spawnBubble, 900);
-  spawnBubble();
   await playLine("gameInstruction_G3");
-  announceTarget();
-  const targetInterval = setInterval(announceTarget, targetSwitchMs);
 
-  await new Promise((resolve) => setTimeout(resolve, totalRoundMs));
-  stopped = true;
-  clearInterval(spawnInterval);
-  clearInterval(targetInterval);
-  field.innerHTML = "";
+  const ROUND_MS = 6000;
+  // One clearly-separated round per character, in random order — a finite,
+  // legible structure instead of a 45s free-for-all with a silently
+  // rotating target.
+  for (const targetEntry of shuffle(entries)) {
+    // Clean break between characters: clear the field, show + pulse the new
+    // target so it's obvious a new one has started, say it, then open the
+    // timed window.
+    field.innerHTML = "";
+    targetCharEl.textContent = targetEntry.char;
+    targetCharEl.classList.remove("pulse");
+    void targetCharEl.offsetWidth;
+    targetCharEl.classList.add("pulse");
+    timerFill.style.width = "100%";
+
+    await playLine(`char_${targetEntry.char}`);
+    await runBubbleRound(field, timerFill, entries, targetEntry, ROUND_MS);
+
+    // Visible boundary before the next character.
+    field.innerHTML = "";
+    await new Promise((r) => setTimeout(r, 600));
+  }
+
   await playLine(pickVariant("praise", 5));
 }
 
