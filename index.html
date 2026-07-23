@@ -12,26 +12,36 @@
 </head>
 <body>
 
-  <!-- Garden screen: this is the home screen and the progress dashboard. -->
+  <!-- Garden screen: this is the home screen. Radically simplified in v3 —
+       just the garden background, the streak calendar, and TWO big doors
+       (说说话 speaking room, 认认字 character room). Everything else that
+       used to live in the header (cards, studio, arcade, the daily-session
+       button) has moved inside those two rooms. Only a tiny corner dot is
+       left for the parent. -->
   <section id="screen-garden" class="screen" aria-label="花园">
-    <header class="garden-header">
-      <div class="header-icon-group">
-        <button id="btn-cards" class="icon-button" aria-label="卡片册" title="卡片册">📖</button>
-        <button id="btn-studio" class="icon-button" aria-label="写字时间" title="写字时间">✏️</button>
-        <button id="btn-arcade" class="icon-button" aria-label="游戏场" title="游戏场">🕹️</button>
-      </div>
+    <header class="garden-header garden-header-v3">
       <div id="panda-corner" class="panda-corner" aria-hidden="true">
         <span id="panda-face" class="panda-face">🐼</span>
       </div>
-      <button id="btn-parent" class="icon-button" aria-label="家长区" title="家长区">⚙️</button>
+      <button id="btn-parent" class="parent-dot" aria-label="家长区" title="家长区"></button>
     </header>
 
     <div id="streak-calendar" class="streak-calendar" aria-label="连续记录日历"></div>
 
     <div id="garden-grid" class="garden-grid" aria-label="我的花园"></div>
 
-    <div class="start-button-wrap">
-      <button id="btn-start-session" class="big-button">💧 浇水时间</button>
+    <!-- The two doors. 说说话 is the primary activity (larger, on top);
+         认认字 carries the thirsty-plant badge when reviews are waiting. -->
+    <div class="room-doors">
+      <button id="btn-speaking" class="room-door room-door-speak" type="button">
+        <span class="room-door-icon">🗣️</span>
+        <span class="room-door-label">说说话</span>
+      </button>
+      <button id="btn-character" class="room-door room-door-character" type="button">
+        <span class="room-door-icon">✏️</span>
+        <span class="room-door-label">认认字</span>
+        <span id="character-thirsty-badge" class="room-door-badge hidden" aria-label="需要复习的字"></span>
+      </button>
     </div>
   </section>
 
@@ -66,6 +76,12 @@
        characters. -->
   <section id="screen-arcade" class="screen screen-overlay hidden" aria-label="游戏场">
     <div id="arcade-content" class="session-content"></div>
+  </section>
+
+  <!-- 说说话 (speaking room, v3): the record-and-replay speaking activities.
+       The panda models, she echoes, hears herself back. -->
+  <section id="screen-speaking" class="screen screen-overlay hidden" aria-label="说说话">
+    <div id="speaking-content" class="session-content"></div>
   </section>
 
   <!-- Card collection screen (卡片册). -->

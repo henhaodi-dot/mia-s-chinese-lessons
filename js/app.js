@@ -19,6 +19,7 @@ import {
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runPracticeStudio } from "./studio.js";
 import { runGameArcade } from "./arcade.js";
+import { runSpeakingRoom } from "./speaking.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
 import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
@@ -46,9 +47,47 @@ window.addEventListener("popstate", () => {
   showScreen("screen-garden");
 });
 
+// Thirsty-plant count on the 认认字 door — the gentle pull toward review.
+// No equivalent on 说说话 (that door is for fun, not a counter). Recomputed
+// whenever the garden re-renders, so popping back from a review updates it.
+function renderThirstyBadge() {
+  const badge = document.getElementById("character-thirsty-badge");
+  if (!badge) return;
+  const today = todayLocalDateString();
+  const dueCount = Object.values(progress.characters).filter((state) => isDue(state, today)).length;
+  if (dueCount > 0) {
+    badge.textContent = String(dueCount);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+// Temporary door target for the layout checkpoint — the real speaking /
+// character rooms replace this in the next build steps.
+function showRoomPlaceholder(label, icon) {
+  const screen = document.getElementById("screen-session");
+  const container = document.getElementById("session-content");
+  container.replaceChildren();
+  const placeholder = document.createElement("div");
+  placeholder.className = "session-content";
+  placeholder.innerHTML = `
+    <div class="big-emoji">${icon}🐼</div>
+    <p>「${label}」房间马上就来！</p>
+    <button class="big-button" type="button" id="btn-room-placeholder-back">回到花园</button>
+  `;
+  container.appendChild(placeholder);
+  screen.classList.remove("hidden");
+  history.pushState({ hanziGardenScreen: "screen-session" }, "");
+  document
+    .getElementById("btn-room-placeholder-back")
+    .addEventListener("click", () => history.back());
+}
+
 function renderGardenGrid() {
   const grid = document.getElementById("garden-grid");
   grid.innerHTML = "";
+  renderThirstyBadge();
 
   const today = todayLocalDateString();
   const learned = Object.entries(progress.characters).sort(
@@ -133,21 +172,6 @@ function renderCardGrid() {
   }
 }
 
-async function handleStartSession() {
-  await unlockAudio();
-  history.pushState({ hanziGardenScreen: "screen-session" }, "");
-  const btn = document.getElementById("btn-start-session");
-  btn.disabled = true;
-  try {
-    await runDailySession(progress);
-  } finally {
-    btn.disabled = false;
-    renderGardenGrid();
-    renderStreakCalendar(progress);
-    updatePandaIdleOrSleep(progress, charMap);
-  }
-}
-
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   // file:// and other non-http(s) origins can't register a service worker;
@@ -175,30 +199,18 @@ async function main() {
   renderStreakCalendar(progress);
   updatePandaIdleOrSleep(progress, charMap);
 
-  document.getElementById("btn-start-session").addEventListener("click", handleStartSession);
-
-  document.getElementById("btn-cards").addEventListener("click", () => {
-    renderCardGrid();
-    showScreenWithBackSupport("screen-cards");
-  });
-  document.getElementById("btn-cards-back").addEventListener("click", () => history.back());
-
-  document.getElementById("btn-studio").addEventListener("click", async () => {
+  // 说说话 — the speaking room (built). 认认字 — placeholder until its step.
+  document.getElementById("btn-speaking").addEventListener("click", async () => {
     await unlockAudio();
-    history.pushState({ hanziGardenScreen: "screen-studio" }, "");
-    await runPracticeStudio(progress, charMap);
+    await runSpeakingRoom(progress, charMap);
     renderGardenGrid();
     renderStreakCalendar(progress);
     updatePandaIdleOrSleep(progress, charMap);
   });
 
-  document.getElementById("btn-arcade").addEventListener("click", async () => {
+  document.getElementById("btn-character").addEventListener("click", async () => {
     await unlockAudio();
-    history.pushState({ hanziGardenScreen: "screen-arcade" }, "");
-    await runGameArcade(progress, charMap);
-    renderGardenGrid();
-    renderStreakCalendar(progress);
-    updatePandaIdleOrSleep(progress, charMap);
+    showRoomPlaceholder("认认字", "✏️");
   });
 
   document.getElementById("btn-parent").addEventListener("click", () => {
