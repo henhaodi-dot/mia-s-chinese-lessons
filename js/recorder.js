@@ -141,6 +141,11 @@ export async function recordWithUI(container, stream) {
     finishResolve();
   }
 
+  // Hard cap on a real timer, independent of the rAF draw loop below — rAF
+  // pauses in a backgrounded tab, and the recording must always stop even
+  // if the child tabs away mid-record.
+  const capTimer = setTimeout(finish, MAX_RECORD_MS);
+
   // JS-driven countdown ring — a CSS transition can silently fail to advance
   // in a throttled renderer, and the ring is the child's cue that time is
   // running, so it must always move.
@@ -195,6 +200,7 @@ export async function recordWithUI(container, stream) {
   stopButton.addEventListener("click", finish, { once: true });
   await finishedPromise;
 
+  clearTimeout(capTimer);
   drawing = false;
   if (rafId) cancelAnimationFrame(rafId);
   const durationMs = performance.now() - startedAt;

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "food_01",
+    "topic": "food",
+    "pandaQuestion": "你今天想吃什么？",
+    "pandaQuestionAudioKey": "dialogue_food_01_q",
+    "answers": [
+      { "text": "我想吃面条", "audioKey": "dialogue_food_01_a1", "emoji": "🍜" },
+      { "text": "我想吃米饭", "audioKey": "dialogue_food_01_a2", "emoji": "🍚" },
+      { "text": "我想吃苹果", "audioKey": "dialogue_food_01_a3", "emoji": "🍎" }
+    ],
+    "pandaFollowUps": {
+      "dialogue_food_01_a1": { "text": "面条真好吃！我也喜欢！", "audioKey": "dialogue_food_01_f1" },
+      "dialogue_food_01_a2": { "text": "白米饭香香的，真好！", "audioKey": "dialogue_food_01_f2" },
+      "dialogue_food_01_a3": { "text": "苹果甜甜的，我最爱吃！", "audioKey": "dialogue_food_01_f3" }
+    }
+  },
+  {
+    "id": "animal_01",
+    "topic": "animals",
+    "pandaQuestion": "你喜欢什么小动物？",
+    "pandaQuestionAudioKey": "dialogue_animal_01_q",
+    "answers": [
+      { "text": "我喜欢小猫", "audioKey": "dialogue_animal_01_a1", "emoji": "🐱" },
+      { "text": "我喜欢小狗", "audioKey": "dialogue_animal_01_a2", "emoji": "🐶" },
+      { "text": "我喜欢小鸟", "audioKey": "dialogue_animal_01_a3", "emoji": "🐦" }
+    ],
+    "pandaFollowUps": {
+      "dialogue_animal_01_a1": { "text": "小猫喵喵叫，真可爱！", "audioKey": "dialogue_animal_01_f1" },
+      "dialogue_animal_01_a2": { "text": "小狗汪汪汪，最爱和你玩！", "audioKey": "dialogue_animal_01_f2" },
+      "dialogue_animal_01_a3": { "text": "小鸟会飞，真厉害！", "audioKey": "dialogue_animal_01_f3" }
+    }
+  },
+  {
+    "id": "feeling_01",
+    "topic": "feelings",
+    "pandaQuestion": "你今天开心吗？",
+    "pandaQuestionAudioKey": "dialogue_feeling_01_q",
+    "answers": [
+      { "text": "我很开心", "audioKey": "dialogue_feeling_01_a1", "emoji": "😄" },
+      { "text": "我有点累", "audioKey": "dialogue_feeling_01_a2", "emoji": "😴" },
+      { "text": "我想妈妈", "audioKey": "dialogue_feeling_01_a3", "emoji": "🤗" }
+    ],
+    "pandaFollowUps": {
+      "dialogue_feeling_01_a1": { "text": "开心真好！我也很开心！", "audioKey": "dialogue_feeling_01_f1" },
+      "dialogue_feeling_01_a2": { "text": "累了就休息一下，我陪着你。", "audioKey": "dialogue_feeling_01_f2" },
+      "dialogue_feeling_01_a3": { "text": "妈妈也很爱你，抱抱！", "audioKey": "dialogue_feeling_01_f3" }
+    }
+  }
+]

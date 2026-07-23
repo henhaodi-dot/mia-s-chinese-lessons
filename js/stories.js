@@ -29,3 +29,10 @@ export function getStoryForTriple(chars) {
 export async function warmStoriesCache() {
   await loadStories();
 }
+
+// Every story, for the speaking room's A4 retell activity (which wants any
+// story, not one keyed to today's exact new-character triple).
+export async function getAllStories() {
+  const cache = await loadStories();
+  return [...cache.values()];
+}

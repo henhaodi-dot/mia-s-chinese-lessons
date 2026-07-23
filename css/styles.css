@@ -408,6 +408,166 @@ button {
   animation: sticker-pop 0.5s ease;
 }
 
+.speaking-end-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+/* A2 sentence display: known chars highlighted, unknown get a pinyin ruby. */
+.speaking-sentence {
+  font-size: 40px;
+  line-height: 1.9;
+  text-align: center;
+  color: var(--text-dark);
+}
+.sent-known {
+  color: var(--garden-green-dark);
+  font-weight: bold;
+}
+.sent-unknown {
+  color: #90a4ae;
+}
+.sent-unknown rt {
+  font-size: 15px;
+  color: #b0bec5;
+}
+.sent-punct {
+  color: var(--text-dark);
+}
+.speaking-retell-label {
+  font-size: 22px;
+  color: var(--text-dark);
+}
+
+/* A3 dialogue */
+.dialogue-question {
+  font-size: 34px;
+  font-weight: bold;
+  color: var(--text-dark);
+  text-align: center;
+}
+.dialogue-question-small {
+  font-size: 22px;
+  color: var(--garden-green-dark);
+  text-align: center;
+}
+.dialogue-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 460px;
+}
+.dialogue-answer-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background: var(--card-bg);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  font-size: 28px;
+}
+.dialogue-answer-card:active {
+  transform: scale(0.97);
+}
+.dialogue-answer-emoji {
+  font-size: 40px;
+}
+.dialogue-answer-emoji.big {
+  font-size: 96px;
+}
+.dialogue-answer-text {
+  font-weight: bold;
+  color: var(--text-dark);
+}
+.dialogue-followup {
+  font-size: 30px;
+  color: var(--garden-green-dark);
+  text-align: center;
+  font-weight: bold;
+}
+
+/* A5 say it loud */
+.loud-banner {
+  font-size: 30px;
+  font-weight: bold;
+  color: var(--garden-pink);
+}
+.loud-word {
+  font-size: 72px;
+  font-weight: bold;
+  color: var(--text-dark);
+  transition: transform 0.08s ease-out;
+}
+.loud-big {
+  color: var(--garden-gold);
+}
+.loud-ok {
+  color: var(--garden-green);
+}
+
+/* 我的声音 voice gallery */
+.voice-gallery-screen {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.voice-gallery-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.voice-gallery-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--text-dark);
+}
+.voice-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 700px;
+}
+.voice-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  background: var(--card-bg);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  border: 3px solid transparent;
+}
+.voice-tile-gold {
+  border-color: var(--garden-gold);
+}
+.voice-tile-playing {
+  background: #e8f5e9;
+}
+.voice-tile-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 44px;
+}
+.voice-bar {
+  width: 5px;
+  background: var(--garden-green);
+  border-radius: 3px;
+}
+.voice-tile-label {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--text-dark);
+  text-align: center;
+  line-height: 1.2;
+}
+
 /* Thirsty-plant count — only ever on 认认字, gently pulling her toward
    review. No equivalent on 说说话 (she goes there because it's fun). */
 .room-door-badge {

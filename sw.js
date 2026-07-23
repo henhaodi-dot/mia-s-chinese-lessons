@@ -17,7 +17,7 @@
 // tablet/phone that already installed the app can keep serving stale files
 // far longer than expected. See README.md.
 // ============================================================
-const CACHE_VERSION = "v25";
+const CACHE_VERSION = "v26";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's
@@ -44,6 +44,7 @@ const SHELL_FILES = [
   "./js/speaking.js",
   "./js/recorder.js",
   "./js/recordings.js",
+  "./js/voiceGallery.js",
   "./js/parent.js",
   "./js/print.js",
   "./js/progress.js",
@@ -56,6 +57,7 @@ const SHELL_FILES = [
   "./data/characters.json",
   "./data/ui_lines.json",
   "./data/stories.json",
+  "./data/dialogues.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
 ];
@@ -83,12 +85,14 @@ async function cacheOne(cache, url) {
 // audio, so a single online load is enough for full offline use — not
 // just whatever she happens to review that day.
 async function cacheAllCharacterAssets(cache) {
-  const [charactersRes, uiLinesRes] = await Promise.all([
+  const [charactersRes, uiLinesRes, dialoguesRes] = await Promise.all([
     fetch("./data/characters.json"),
     fetch("./data/ui_lines.json"),
+    fetch("./data/dialogues.json").catch(() => null),
   ]);
   const characters = await charactersRes.json();
   const uiLines = await uiLinesRes.json();
+  const dialogues = dialoguesRes && dialoguesRes.ok ? await dialoguesRes.json() : [];
 
   const urls = [];
   for (const entry of characters) {
@@ -101,6 +105,12 @@ async function cacheAllCharacterAssets(cache) {
   }
   for (const key of Object.keys(uiLines)) {
     urls.push(`./assets/audio/${key}.mp3`);
+  }
+  // Dialogue audio (A3): question, each answer, each follow-up.
+  for (const d of dialogues) {
+    urls.push(`./assets/audio/${d.pandaQuestionAudioKey}.mp3`);
+    for (const answer of d.answers) urls.push(`./assets/audio/${answer.audioKey}.mp3`);
+    for (const follow of Object.values(d.pandaFollowUps)) urls.push(`./assets/audio/${follow.audioKey}.mp3`);
   }
 
   // Firing all ~1200 requests at once (Promise.all over the whole list)

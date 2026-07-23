@@ -414,5 +414,25 @@
   "speakingSummary": {
     "text": "你说得真棒！我们下次再来说说话！",
     "pinyin": "Nǐ shuō de zhēn bàng! Wǒmen xiàcì zài lái shuōshuo huà!"
+  },
+  "echoSentenceIntro": {
+    "text": "跟我读这些句子！",
+    "pinyin": "Gēn wǒ dú zhèxiē jùzi!"
+  },
+  "dialogueIntro": {
+    "text": "熊猫要问你几个问题，你来回答我！",
+    "pinyin": "Xióngmāo yào wèn nǐ jǐ ge wèntí, nǐ lái huídá wǒ!"
+  },
+  "storyRetellIntro": {
+    "text": "熊猫给你讲个小故事，你要听好哦！",
+    "pinyin": "Xióngmāo gěi nǐ jiǎng ge xiǎo gùshi, nǐ yào tīng hǎo o!"
+  },
+  "sayThisLine": {
+    "text": "现在你来讲这一句！",
+    "pinyin": "Xiànzài nǐ lái jiǎng zhè yí jù!"
+  },
+  "sayLoudIntro": {
+    "text": "大声说游戏开始啦！看到什么就大声说出来！",
+    "pinyin": "Dàshēng shuō yóuxì kāishǐ la! Kàndào shénme jiù dàshēng shuō chūlái!"
   }
 }

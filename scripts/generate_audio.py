@@ -58,6 +58,19 @@ def collect_lines():
     for key, entry in ui_lines.items():
         lines.append((key, entry["text"]))
 
+    # Speaking-room dialogues (A3 熊猫问你): every panda question, answer
+    # option, and per-answer follow-up needs its own spoken line. Optional —
+    # the file may not exist yet while the dialogue bank is being authored.
+    dialogues_file = ROOT / "data" / "dialogues.json"
+    if dialogues_file.exists():
+        dialogues = json.loads(dialogues_file.read_text(encoding="utf-8"))
+        for d in dialogues:
+            lines.append((d["pandaQuestionAudioKey"], d["pandaQuestion"]))
+            for answer in d["answers"]:
+                lines.append((answer["audioKey"], answer["text"]))
+            for follow in d["pandaFollowUps"].values():
+                lines.append((follow["audioKey"], follow["text"]))
+
     return lines
 
 

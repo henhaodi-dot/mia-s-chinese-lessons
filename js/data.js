@@ -21,6 +21,22 @@ export async function loadUiLines() {
   return uiLinesCache;
 }
 
+// Speaking-room dialogue bank (A3 熊猫问你). Optional file — returns [] if it
+// isn't present yet, so the activity degrades to "skip" rather than erroring.
+let dialoguesCache = null;
+
+export async function loadDialogues() {
+  if (!dialoguesCache) {
+    try {
+      const res = await fetch("./data/dialogues.json");
+      dialoguesCache = res.ok ? await res.json() : [];
+    } catch {
+      dialoguesCache = [];
+    }
+  }
+  return dialoguesCache;
+}
+
 // Convenience: characters.json as a Map keyed by char, since almost every
 // lookup in the app is "give me the entry for this character".
 let charByCharCache = null;
