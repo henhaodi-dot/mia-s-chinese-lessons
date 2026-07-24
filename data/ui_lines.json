@@ -434,5 +434,9 @@
   "sayLoudIntro": {
     "text": "大声说游戏开始啦！看到什么就大声说出来！",
     "pinyin": "Dàshēng shuō yóuxì kāishǐ la! Kàndào shénme jiù dàshēng shuō chūlái!"
+  },
+  "characterWelcome": {
+    "text": "我们一起来认认字、玩游戏吧！",
+    "pinyin": "Wǒmen yìqǐ lái rènren zì, wán yóuxì ba!"
   }
 }

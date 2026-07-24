@@ -20,6 +20,7 @@ import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./pa
 import { runPracticeStudio } from "./studio.js";
 import { runGameArcade } from "./arcade.js";
 import { runSpeakingRoom } from "./speaking.js";
+import { runCharacterRoom } from "./characterRoom.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
 import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
@@ -61,27 +62,6 @@ function renderThirstyBadge() {
   } else {
     badge.classList.add("hidden");
   }
-}
-
-// Temporary door target for the layout checkpoint — the real speaking /
-// character rooms replace this in the next build steps.
-function showRoomPlaceholder(label, icon) {
-  const screen = document.getElementById("screen-session");
-  const container = document.getElementById("session-content");
-  container.replaceChildren();
-  const placeholder = document.createElement("div");
-  placeholder.className = "session-content";
-  placeholder.innerHTML = `
-    <div class="big-emoji">${icon}🐼</div>
-    <p>「${label}」房间马上就来！</p>
-    <button class="big-button" type="button" id="btn-room-placeholder-back">回到花园</button>
-  `;
-  container.appendChild(placeholder);
-  screen.classList.remove("hidden");
-  history.pushState({ hanziGardenScreen: "screen-session" }, "");
-  document
-    .getElementById("btn-room-placeholder-back")
-    .addEventListener("click", () => history.back());
 }
 
 function renderGardenGrid() {
@@ -210,7 +190,10 @@ async function main() {
 
   document.getElementById("btn-character").addEventListener("click", async () => {
     await unlockAudio();
-    showRoomPlaceholder("认认字", "✏️");
+    await runCharacterRoom(progress, charMap);
+    renderGardenGrid();
+    renderStreakCalendar(progress);
+    updatePandaIdleOrSleep(progress, charMap);
   });
 
   document.getElementById("btn-parent").addEventListener("click", () => {

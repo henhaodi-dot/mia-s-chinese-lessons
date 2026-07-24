@@ -17,7 +17,7 @@
 // tablet/phone that already installed the app can keep serving stale files
 // far longer than expected. See README.md.
 // ============================================================
-const CACHE_VERSION = "v27";
+const CACHE_VERSION = "v28";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's
@@ -45,6 +45,7 @@ const SHELL_FILES = [
   "./js/recorder.js",
   "./js/recordings.js",
   "./js/voiceGallery.js",
+  "./js/characterRoom.js",
   "./js/parent.js",
   "./js/print.js",
   "./js/progress.js",
