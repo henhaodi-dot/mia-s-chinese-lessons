@@ -5,46 +5,1108 @@
     "pandaQuestion": "你今天想吃什么？",
     "pandaQuestionAudioKey": "dialogue_food_01_q",
     "answers": [
-      { "text": "我想吃面条", "audioKey": "dialogue_food_01_a1", "emoji": "🍜" },
-      { "text": "我想吃米饭", "audioKey": "dialogue_food_01_a2", "emoji": "🍚" },
-      { "text": "我想吃苹果", "audioKey": "dialogue_food_01_a3", "emoji": "🍎" }
+      {
+        "text": "我想吃面条",
+        "audioKey": "dialogue_food_01_a1",
+        "emoji": "🍜"
+      },
+      {
+        "text": "我想吃米饭",
+        "audioKey": "dialogue_food_01_a2",
+        "emoji": "🍚"
+      },
+      {
+        "text": "我想吃苹果",
+        "audioKey": "dialogue_food_01_a3",
+        "emoji": "🍎"
+      }
     ],
     "pandaFollowUps": {
-      "dialogue_food_01_a1": { "text": "面条真好吃！我也喜欢！", "audioKey": "dialogue_food_01_f1" },
-      "dialogue_food_01_a2": { "text": "白米饭香香的，真好！", "audioKey": "dialogue_food_01_f2" },
-      "dialogue_food_01_a3": { "text": "苹果甜甜的，我最爱吃！", "audioKey": "dialogue_food_01_f3" }
+      "dialogue_food_01_a1": {
+        "text": "面条我也喜欢，我们口味一样！",
+        "audioKey": "dialogue_food_01_f1"
+      },
+      "dialogue_food_01_a2": {
+        "text": "米饭配上菜，最香了。",
+        "audioKey": "dialogue_food_01_f2"
+      },
+      "dialogue_food_01_a3": {
+        "text": "苹果又甜又脆，好选择！",
+        "audioKey": "dialogue_food_01_f3"
+      }
+    }
+  },
+  {
+    "id": "food_02",
+    "topic": "food",
+    "pandaQuestion": "你最爱吃的水果是什么？",
+    "pandaQuestionAudioKey": "dialogue_food_02_q",
+    "answers": [
+      {
+        "text": "我爱吃香蕉",
+        "audioKey": "dialogue_food_02_a1",
+        "emoji": "🍌"
+      },
+      {
+        "text": "我爱吃橙子",
+        "audioKey": "dialogue_food_02_a2",
+        "emoji": "🍊"
+      },
+      {
+        "text": "我爱吃葡萄",
+        "audioKey": "dialogue_food_02_a3",
+        "emoji": "🍇"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_food_02_a1": {
+        "text": "香蕉营养好，运动前吃正合适。",
+        "audioKey": "dialogue_food_02_f1"
+      },
+      "dialogue_food_02_a2": {
+        "text": "橙子酸甜可口，还有维C。",
+        "audioKey": "dialogue_food_02_f2"
+      },
+      "dialogue_food_02_a3": {
+        "text": "葡萄一颗接一颗，真好吃。",
+        "audioKey": "dialogue_food_02_f3"
+      }
+    }
+  },
+  {
+    "id": "food_03",
+    "topic": "food",
+    "pandaQuestion": "你渴了想喝什么？",
+    "pandaQuestionAudioKey": "dialogue_food_03_q",
+    "answers": [
+      {
+        "text": "我想喝水",
+        "audioKey": "dialogue_food_03_a1",
+        "emoji": "💧"
+      },
+      {
+        "text": "我想喝牛奶",
+        "audioKey": "dialogue_food_03_a2",
+        "emoji": "🥛"
+      },
+      {
+        "text": "我想喝果汁",
+        "audioKey": "dialogue_food_03_a3",
+        "emoji": "🧃"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_food_03_a1": {
+        "text": "多喝水对身体最好。",
+        "audioKey": "dialogue_food_03_f1"
+      },
+      "dialogue_food_03_a2": {
+        "text": "牛奶有营养，帮你长个子。",
+        "audioKey": "dialogue_food_03_f2"
+      },
+      "dialogue_food_03_a3": {
+        "text": "果汁好喝，不过别喝太多哦。",
+        "audioKey": "dialogue_food_03_f3"
+      }
     }
   },
   {
     "id": "animal_01",
     "topic": "animals",
-    "pandaQuestion": "你喜欢什么小动物？",
+    "pandaQuestion": "你最喜欢什么动物？",
     "pandaQuestionAudioKey": "dialogue_animal_01_q",
     "answers": [
-      { "text": "我喜欢小猫", "audioKey": "dialogue_animal_01_a1", "emoji": "🐱" },
-      { "text": "我喜欢小狗", "audioKey": "dialogue_animal_01_a2", "emoji": "🐶" },
-      { "text": "我喜欢小鸟", "audioKey": "dialogue_animal_01_a3", "emoji": "🐦" }
+      {
+        "text": "我喜欢猫",
+        "audioKey": "dialogue_animal_01_a1",
+        "emoji": "🐱"
+      },
+      {
+        "text": "我喜欢狗",
+        "audioKey": "dialogue_animal_01_a2",
+        "emoji": "🐶"
+      },
+      {
+        "text": "我喜欢鸟",
+        "audioKey": "dialogue_animal_01_a3",
+        "emoji": "🐦"
+      }
     ],
     "pandaFollowUps": {
-      "dialogue_animal_01_a1": { "text": "小猫喵喵叫，真可爱！", "audioKey": "dialogue_animal_01_f1" },
-      "dialogue_animal_01_a2": { "text": "小狗汪汪汪，最爱和你玩！", "audioKey": "dialogue_animal_01_f2" },
-      "dialogue_animal_01_a3": { "text": "小鸟会飞，真厉害！", "audioKey": "dialogue_animal_01_f3" }
+      "dialogue_animal_01_a1": {
+        "text": "猫又聪明又独立，我也喜欢。",
+        "audioKey": "dialogue_animal_01_f1"
+      },
+      "dialogue_animal_01_a2": {
+        "text": "狗很忠诚，是最好的伙伴。",
+        "audioKey": "dialogue_animal_01_f2"
+      },
+      "dialogue_animal_01_a3": {
+        "text": "能在天上飞，真让人羡慕。",
+        "audioKey": "dialogue_animal_01_f3"
+      }
+    }
+  },
+  {
+    "id": "animal_02",
+    "topic": "animals",
+    "pandaQuestion": "你想去动物园看什么？",
+    "pandaQuestionAudioKey": "dialogue_animal_02_q",
+    "answers": [
+      {
+        "text": "我想看熊猫",
+        "audioKey": "dialogue_animal_02_a1",
+        "emoji": "🐼"
+      },
+      {
+        "text": "我想看大象",
+        "audioKey": "dialogue_animal_02_a2",
+        "emoji": "🐘"
+      },
+      {
+        "text": "我想看长颈鹿",
+        "audioKey": "dialogue_animal_02_a3",
+        "emoji": "🦒"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_animal_02_a1": {
+        "text": "那是我的亲戚，替我打个招呼！",
+        "audioKey": "dialogue_animal_02_f1"
+      },
+      "dialogue_animal_02_a2": {
+        "text": "大象又大又温和，很了不起。",
+        "audioKey": "dialogue_animal_02_f2"
+      },
+      "dialogue_animal_02_a3": {
+        "text": "长颈鹿脖子长，能吃到高处的叶子。",
+        "audioKey": "dialogue_animal_02_f3"
+      }
+    }
+  },
+  {
+    "id": "animal_03",
+    "topic": "animals",
+    "pandaQuestion": "你觉得哪种动物最厉害？",
+    "pandaQuestionAudioKey": "dialogue_animal_03_q",
+    "answers": [
+      {
+        "text": "我觉得狮子最厉害",
+        "audioKey": "dialogue_animal_03_a1",
+        "emoji": "🦁"
+      },
+      {
+        "text": "我觉得老虎最厉害",
+        "audioKey": "dialogue_animal_03_a2",
+        "emoji": "🐯"
+      },
+      {
+        "text": "我觉得老鹰最厉害",
+        "audioKey": "dialogue_animal_03_a3",
+        "emoji": "🦅"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_animal_03_a1": {
+        "text": "狮子是草原之王，很威风。",
+        "audioKey": "dialogue_animal_03_f1"
+      },
+      "dialogue_animal_03_a2": {
+        "text": "老虎又快又有力气，确实厉害。",
+        "audioKey": "dialogue_animal_03_f2"
+      },
+      "dialogue_animal_03_a3": {
+        "text": "老鹰眼睛很尖，飞得又高又快。",
+        "audioKey": "dialogue_animal_03_f3"
+      }
     }
   },
   {
     "id": "feeling_01",
     "topic": "feelings",
-    "pandaQuestion": "你今天开心吗？",
+    "pandaQuestion": "你今天心情怎么样？",
     "pandaQuestionAudioKey": "dialogue_feeling_01_q",
     "answers": [
-      { "text": "我很开心", "audioKey": "dialogue_feeling_01_a1", "emoji": "😄" },
-      { "text": "我有点累", "audioKey": "dialogue_feeling_01_a2", "emoji": "😴" },
-      { "text": "我想妈妈", "audioKey": "dialogue_feeling_01_a3", "emoji": "🤗" }
+      {
+        "text": "我很开心",
+        "audioKey": "dialogue_feeling_01_a1",
+        "emoji": "😄"
+      },
+      {
+        "text": "我有点累",
+        "audioKey": "dialogue_feeling_01_a2",
+        "emoji": "😌"
+      },
+      {
+        "text": "我有点紧张",
+        "audioKey": "dialogue_feeling_01_a3",
+        "emoji": "😟"
+      }
     ],
     "pandaFollowUps": {
-      "dialogue_feeling_01_a1": { "text": "开心真好！我也很开心！", "audioKey": "dialogue_feeling_01_f1" },
-      "dialogue_feeling_01_a2": { "text": "累了就休息一下，我陪着你。", "audioKey": "dialogue_feeling_01_f2" },
-      "dialogue_feeling_01_a3": { "text": "妈妈也很爱你，抱抱！", "audioKey": "dialogue_feeling_01_f3" }
+      "dialogue_feeling_01_a1": {
+        "text": "那太好了！是什么好事？",
+        "audioKey": "dialogue_feeling_01_f1"
+      },
+      "dialogue_feeling_01_a2": {
+        "text": "累了就歇一会儿，别硬撑。",
+        "audioKey": "dialogue_feeling_01_f2"
+      },
+      "dialogue_feeling_01_a3": {
+        "text": "别担心，深呼吸，你没问题的。",
+        "audioKey": "dialogue_feeling_01_f3"
+      }
+    }
+  },
+  {
+    "id": "feeling_02",
+    "topic": "feelings",
+    "pandaQuestion": "什么事会让你笑？",
+    "pandaQuestionAudioKey": "dialogue_feeling_02_q",
+    "answers": [
+      {
+        "text": "听到笑话",
+        "audioKey": "dialogue_feeling_02_a1",
+        "emoji": "😂"
+      },
+      {
+        "text": "收到礼物",
+        "audioKey": "dialogue_feeling_02_a2",
+        "emoji": "🎁"
+      },
+      {
+        "text": "和小狗玩",
+        "audioKey": "dialogue_feeling_02_a3",
+        "emoji": "🐶"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_feeling_02_a1": {
+        "text": "笑一笑，一天都开心。",
+        "audioKey": "dialogue_feeling_02_f1"
+      },
+      "dialogue_feeling_02_a2": {
+        "text": "收到礼物确实开心，是什么呀？",
+        "audioKey": "dialogue_feeling_02_f2"
+      },
+      "dialogue_feeling_02_a3": {
+        "text": "和小动物玩，心情特别好。",
+        "audioKey": "dialogue_feeling_02_f3"
+      }
+    }
+  },
+  {
+    "id": "feeling_03",
+    "topic": "feelings",
+    "pandaQuestion": "遇到难题你会怎么办？",
+    "pandaQuestionAudioKey": "dialogue_feeling_03_q",
+    "answers": [
+      {
+        "text": "我自己想办法",
+        "audioKey": "dialogue_feeling_03_a1",
+        "emoji": "💪"
+      },
+      {
+        "text": "我去问老师",
+        "audioKey": "dialogue_feeling_03_a2",
+        "emoji": "🙋"
+      },
+      {
+        "text": "我找朋友帮忙",
+        "audioKey": "dialogue_feeling_03_a3",
+        "emoji": "🤝"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_feeling_03_a1": {
+        "text": "愿意自己动脑筋，很棒。",
+        "audioKey": "dialogue_feeling_03_f1"
+      },
+      "dialogue_feeling_03_a2": {
+        "text": "不懂就问，是聪明的做法。",
+        "audioKey": "dialogue_feeling_03_f2"
+      },
+      "dialogue_feeling_03_a3": {
+        "text": "大家一起想，办法更多。",
+        "audioKey": "dialogue_feeling_03_f3"
+      }
+    }
+  },
+  {
+    "id": "family_01",
+    "topic": "family",
+    "pandaQuestion": "家里谁最懂你？",
+    "pandaQuestionAudioKey": "dialogue_family_01_q",
+    "answers": [
+      {
+        "text": "妈妈最懂我",
+        "audioKey": "dialogue_family_01_a1",
+        "emoji": "👩"
+      },
+      {
+        "text": "爸爸最懂我",
+        "audioKey": "dialogue_family_01_a2",
+        "emoji": "👨"
+      },
+      {
+        "text": "外婆最懂我",
+        "audioKey": "dialogue_family_01_a3",
+        "emoji": "👵"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_family_01_a1": {
+        "text": "妈妈总是最了解你。",
+        "audioKey": "dialogue_family_01_f1"
+      },
+      "dialogue_family_01_a2": {
+        "text": "有爸爸支持你，真好。",
+        "audioKey": "dialogue_family_01_f2"
+      },
+      "dialogue_family_01_a3": {
+        "text": "外婆见得多，什么都明白。",
+        "audioKey": "dialogue_family_01_f3"
+      }
+    }
+  },
+  {
+    "id": "family_02",
+    "topic": "family",
+    "pandaQuestion": "周末你想和家人做什么？",
+    "pandaQuestionAudioKey": "dialogue_family_02_q",
+    "answers": [
+      {
+        "text": "我想去公园",
+        "audioKey": "dialogue_family_02_a1",
+        "emoji": "🏞️"
+      },
+      {
+        "text": "我想一起做饭",
+        "audioKey": "dialogue_family_02_a2",
+        "emoji": "🍳"
+      },
+      {
+        "text": "我想看电影",
+        "audioKey": "dialogue_family_02_a3",
+        "emoji": "🎬"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_family_02_a1": {
+        "text": "一家人散散步，很惬意。",
+        "audioKey": "dialogue_family_02_f1"
+      },
+      "dialogue_family_02_a2": {
+        "text": "自己做的饭，特别香。",
+        "audioKey": "dialogue_family_02_f2"
+      },
+      "dialogue_family_02_a3": {
+        "text": "一起看电影，很温馨。",
+        "audioKey": "dialogue_family_02_f3"
+      }
+    }
+  },
+  {
+    "id": "family_03",
+    "topic": "family",
+    "pandaQuestion": "你想对家人说什么？",
+    "pandaQuestionAudioKey": "dialogue_family_03_q",
+    "answers": [
+      {
+        "text": "我爱你们",
+        "audioKey": "dialogue_family_03_a1",
+        "emoji": "❤️"
+      },
+      {
+        "text": "谢谢你们",
+        "audioKey": "dialogue_family_03_a2",
+        "emoji": "🙏"
+      },
+      {
+        "text": "我想抱抱你们",
+        "audioKey": "dialogue_family_03_a3",
+        "emoji": "🤗"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_family_03_a1": {
+        "text": "他们听了一定很幸福。",
+        "audioKey": "dialogue_family_03_f1"
+      },
+      "dialogue_family_03_a2": {
+        "text": "懂得感谢，你很懂事。",
+        "audioKey": "dialogue_family_03_f2"
+      },
+      "dialogue_family_03_a3": {
+        "text": "抱一个，把爱传递出去。",
+        "audioKey": "dialogue_family_03_f3"
+      }
+    }
+  },
+  {
+    "id": "color_01",
+    "topic": "colors",
+    "pandaQuestion": "你最喜欢什么颜色？",
+    "pandaQuestionAudioKey": "dialogue_color_01_q",
+    "answers": [
+      {
+        "text": "我喜欢红色",
+        "audioKey": "dialogue_color_01_a1",
+        "emoji": "🔴"
+      },
+      {
+        "text": "我喜欢蓝色",
+        "audioKey": "dialogue_color_01_a2",
+        "emoji": "🔵"
+      },
+      {
+        "text": "我喜欢绿色",
+        "audioKey": "dialogue_color_01_a3",
+        "emoji": "🟢"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_color_01_a1": {
+        "text": "红色很有活力！",
+        "audioKey": "dialogue_color_01_f1"
+      },
+      "dialogue_color_01_a2": {
+        "text": "蓝色让人很平静。",
+        "audioKey": "dialogue_color_01_f2"
+      },
+      "dialogue_color_01_a3": {
+        "text": "绿色像大自然，很清新。",
+        "audioKey": "dialogue_color_01_f3"
+      }
+    }
+  },
+  {
+    "id": "color_02",
+    "topic": "colors",
+    "pandaQuestion": "你的房间是什么颜色的？",
+    "pandaQuestionAudioKey": "dialogue_color_02_q",
+    "answers": [
+      {
+        "text": "我的房间是黄色",
+        "audioKey": "dialogue_color_02_a1",
+        "emoji": "🟡"
+      },
+      {
+        "text": "我的房间是紫色",
+        "audioKey": "dialogue_color_02_a2",
+        "emoji": "🟣"
+      },
+      {
+        "text": "我的房间是粉色",
+        "audioKey": "dialogue_color_02_a3",
+        "emoji": "🩷"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_color_02_a1": {
+        "text": "黄色很明亮，像阳光一样。",
+        "audioKey": "dialogue_color_02_f1"
+      },
+      "dialogue_color_02_a2": {
+        "text": "紫色很特别，有点神秘。",
+        "audioKey": "dialogue_color_02_f2"
+      },
+      "dialogue_color_02_a3": {
+        "text": "粉色柔和，看着很舒服。",
+        "audioKey": "dialogue_color_02_f3"
+      }
+    }
+  },
+  {
+    "id": "color_03",
+    "topic": "colors",
+    "pandaQuestion": "彩虹里你最喜欢哪种颜色？",
+    "pandaQuestionAudioKey": "dialogue_color_03_q",
+    "answers": [
+      {
+        "text": "我喜欢橙色",
+        "audioKey": "dialogue_color_03_a1",
+        "emoji": "🟠"
+      },
+      {
+        "text": "我喜欢蓝色",
+        "audioKey": "dialogue_color_03_a2",
+        "emoji": "🔵"
+      },
+      {
+        "text": "我喜欢紫色",
+        "audioKey": "dialogue_color_03_a3",
+        "emoji": "🟣"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_color_03_a1": {
+        "text": "橙色温暖，像日落一样。",
+        "audioKey": "dialogue_color_03_f1"
+      },
+      "dialogue_color_03_a2": {
+        "text": "蓝色清爽，像大海一样。",
+        "audioKey": "dialogue_color_03_f2"
+      },
+      "dialogue_color_03_a3": {
+        "text": "紫色在彩虹最外圈，很特别。",
+        "audioKey": "dialogue_color_03_f3"
+      }
+    }
+  },
+  {
+    "id": "weather_01",
+    "topic": "weather",
+    "pandaQuestion": "今天天气怎么样？",
+    "pandaQuestionAudioKey": "dialogue_weather_01_q",
+    "answers": [
+      {
+        "text": "今天是晴天",
+        "audioKey": "dialogue_weather_01_a1",
+        "emoji": "☀️"
+      },
+      {
+        "text": "今天下雨",
+        "audioKey": "dialogue_weather_01_a2",
+        "emoji": "🌧️"
+      },
+      {
+        "text": "今天很冷",
+        "audioKey": "dialogue_weather_01_a3",
+        "emoji": "❄️"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_weather_01_a1": {
+        "text": "天气这么好，适合出去走走。",
+        "audioKey": "dialogue_weather_01_f1"
+      },
+      "dialogue_weather_01_a2": {
+        "text": "下雨天，在家看看书也不错。",
+        "audioKey": "dialogue_weather_01_f2"
+      },
+      "dialogue_weather_01_a3": {
+        "text": "记得多穿点，别着凉了。",
+        "audioKey": "dialogue_weather_01_f3"
+      }
+    }
+  },
+  {
+    "id": "weather_02",
+    "topic": "weather",
+    "pandaQuestion": "你最喜欢什么季节？",
+    "pandaQuestionAudioKey": "dialogue_weather_02_q",
+    "answers": [
+      {
+        "text": "我喜欢春天",
+        "audioKey": "dialogue_weather_02_a1",
+        "emoji": "🌸"
+      },
+      {
+        "text": "我喜欢夏天",
+        "audioKey": "dialogue_weather_02_a2",
+        "emoji": "☀️"
+      },
+      {
+        "text": "我喜欢秋天",
+        "audioKey": "dialogue_weather_02_a3",
+        "emoji": "🍂"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_weather_02_a1": {
+        "text": "春天花都开了，很美。",
+        "audioKey": "dialogue_weather_02_f1"
+      },
+      "dialogue_weather_02_a2": {
+        "text": "夏天可以游泳，很痛快。",
+        "audioKey": "dialogue_weather_02_f2"
+      },
+      "dialogue_weather_02_a3": {
+        "text": "秋天凉快，还有好多水果。",
+        "audioKey": "dialogue_weather_02_f3"
+      }
+    }
+  },
+  {
+    "id": "weather_03",
+    "topic": "weather",
+    "pandaQuestion": "下雪天你想做什么？",
+    "pandaQuestionAudioKey": "dialogue_weather_03_q",
+    "answers": [
+      {
+        "text": "我想堆雪人",
+        "audioKey": "dialogue_weather_03_a1",
+        "emoji": "⛄"
+      },
+      {
+        "text": "我想打雪仗",
+        "audioKey": "dialogue_weather_03_a2",
+        "emoji": "❄️"
+      },
+      {
+        "text": "我想在家喝热饮",
+        "audioKey": "dialogue_weather_03_a3",
+        "emoji": "☕"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_weather_03_a1": {
+        "text": "堆个大雪人，很好玩。",
+        "audioKey": "dialogue_weather_03_f1"
+      },
+      "dialogue_weather_03_a2": {
+        "text": "打雪仗要注意安全哦。",
+        "audioKey": "dialogue_weather_03_f2"
+      },
+      "dialogue_weather_03_a3": {
+        "text": "窝在家里喝热饮，很舒服。",
+        "audioKey": "dialogue_weather_03_f3"
+      }
+    }
+  },
+  {
+    "id": "routine_01",
+    "topic": "routine",
+    "pandaQuestion": "你今天早上做了什么？",
+    "pandaQuestionAudioKey": "dialogue_routine_01_q",
+    "answers": [
+      {
+        "text": "我刷了牙",
+        "audioKey": "dialogue_routine_01_a1",
+        "emoji": "🪥"
+      },
+      {
+        "text": "我吃了早饭",
+        "audioKey": "dialogue_routine_01_a2",
+        "emoji": "🥣"
+      },
+      {
+        "text": "我自己穿好衣服",
+        "audioKey": "dialogue_routine_01_a3",
+        "emoji": "👕"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_routine_01_a1": {
+        "text": "牙齿刷干净了，很清爽。",
+        "audioKey": "dialogue_routine_01_f1"
+      },
+      "dialogue_routine_01_a2": {
+        "text": "吃饱了才有精神上学。",
+        "audioKey": "dialogue_routine_01_f2"
+      },
+      "dialogue_routine_01_a3": {
+        "text": "能照顾好自己，真不错。",
+        "audioKey": "dialogue_routine_01_f3"
+      }
+    }
+  },
+  {
+    "id": "routine_02",
+    "topic": "routine",
+    "pandaQuestion": "睡觉前你会做什么？",
+    "pandaQuestionAudioKey": "dialogue_routine_02_q",
+    "answers": [
+      {
+        "text": "我会洗澡",
+        "audioKey": "dialogue_routine_02_a1",
+        "emoji": "🛁"
+      },
+      {
+        "text": "我会看故事书",
+        "audioKey": "dialogue_routine_02_a2",
+        "emoji": "📖"
+      },
+      {
+        "text": "我会刷牙",
+        "audioKey": "dialogue_routine_02_a3",
+        "emoji": "🦷"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_routine_02_a1": {
+        "text": "洗得干净，睡得也香。",
+        "audioKey": "dialogue_routine_02_f1"
+      },
+      "dialogue_routine_02_a2": {
+        "text": "睡前看书，是个好习惯。",
+        "audioKey": "dialogue_routine_02_f2"
+      },
+      "dialogue_routine_02_a3": {
+        "text": "睡前刷牙，牙齿更健康。",
+        "audioKey": "dialogue_routine_02_f3"
+      }
+    }
+  },
+  {
+    "id": "routine_03",
+    "topic": "routine",
+    "pandaQuestion": "放学回家你先做什么？",
+    "pandaQuestionAudioKey": "dialogue_routine_03_q",
+    "answers": [
+      {
+        "text": "我先写作业",
+        "audioKey": "dialogue_routine_03_a1",
+        "emoji": "📝"
+      },
+      {
+        "text": "我先吃点心",
+        "audioKey": "dialogue_routine_03_a2",
+        "emoji": "🍎"
+      },
+      {
+        "text": "我先出去玩",
+        "audioKey": "dialogue_routine_03_a3",
+        "emoji": "⚽"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_routine_03_a1": {
+        "text": "先把作业做完，再安心玩。",
+        "audioKey": "dialogue_routine_03_f1"
+      },
+      "dialogue_routine_03_a2": {
+        "text": "补充点能量，很合理。",
+        "audioKey": "dialogue_routine_03_f2"
+      },
+      "dialogue_routine_03_a3": {
+        "text": "玩之前，别忘了作业哦。",
+        "audioKey": "dialogue_routine_03_f3"
+      }
+    }
+  },
+  {
+    "id": "count_01",
+    "topic": "counting",
+    "pandaQuestion": "你能从一数到几？",
+    "pandaQuestionAudioKey": "dialogue_count_01_q",
+    "answers": [
+      {
+        "text": "我能数到十",
+        "audioKey": "dialogue_count_01_a1",
+        "emoji": "🔟"
+      },
+      {
+        "text": "我能数到一百",
+        "audioKey": "dialogue_count_01_a2",
+        "emoji": "💯"
+      },
+      {
+        "text": "我能数很多",
+        "audioKey": "dialogue_count_01_a3",
+        "emoji": "♾️"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_count_01_a1": {
+        "text": "数到十，很稳！",
+        "audioKey": "dialogue_count_01_f1"
+      },
+      "dialogue_count_01_a2": {
+        "text": "数到一百，厉害！",
+        "audioKey": "dialogue_count_01_f2"
+      },
+      "dialogue_count_01_a3": {
+        "text": "数字是数不完的，对吧？",
+        "audioKey": "dialogue_count_01_f3"
+      }
+    }
+  },
+  {
+    "id": "count_02",
+    "topic": "counting",
+    "pandaQuestion": "你今年几岁了？",
+    "pandaQuestionAudioKey": "dialogue_count_02_q",
+    "answers": [
+      {
+        "text": "我六岁了",
+        "audioKey": "dialogue_count_02_a1",
+        "emoji": "6️⃣"
+      },
+      {
+        "text": "我七岁了",
+        "audioKey": "dialogue_count_02_a2",
+        "emoji": "7️⃣"
+      },
+      {
+        "text": "我八岁了",
+        "audioKey": "dialogue_count_02_a3",
+        "emoji": "8️⃣"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_count_02_a1": {
+        "text": "六岁，正是爱学的年纪。",
+        "audioKey": "dialogue_count_02_f1"
+      },
+      "dialogue_count_02_a2": {
+        "text": "七岁了，是个小大人了。",
+        "audioKey": "dialogue_count_02_f2"
+      },
+      "dialogue_count_02_a3": {
+        "text": "八岁，又长大一岁。",
+        "audioKey": "dialogue_count_02_f3"
+      }
+    }
+  },
+  {
+    "id": "count_03",
+    "topic": "counting",
+    "pandaQuestion": "你有几个好朋友？",
+    "pandaQuestionAudioKey": "dialogue_count_03_q",
+    "answers": [
+      {
+        "text": "我有一个好朋友",
+        "audioKey": "dialogue_count_03_a1",
+        "emoji": "🙂"
+      },
+      {
+        "text": "我有两个好朋友",
+        "audioKey": "dialogue_count_03_a2",
+        "emoji": "👭"
+      },
+      {
+        "text": "我有很多好朋友",
+        "audioKey": "dialogue_count_03_a3",
+        "emoji": "🎉"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_count_03_a1": {
+        "text": "有一个知心朋友，很珍贵。",
+        "audioKey": "dialogue_count_03_f1"
+      },
+      "dialogue_count_03_a2": {
+        "text": "两个朋友一起，更热闹。",
+        "audioKey": "dialogue_count_03_f2"
+      },
+      "dialogue_count_03_a3": {
+        "text": "朋友多，说明你很受欢迎。",
+        "audioKey": "dialogue_count_03_f3"
+      }
+    }
+  },
+  {
+    "id": "body_01",
+    "topic": "body",
+    "pandaQuestion": "你的手能做什么？",
+    "pandaQuestionAudioKey": "dialogue_body_01_q",
+    "answers": [
+      {
+        "text": "我会画画",
+        "audioKey": "dialogue_body_01_a1",
+        "emoji": "🎨"
+      },
+      {
+        "text": "我会写字",
+        "audioKey": "dialogue_body_01_a2",
+        "emoji": "✍️"
+      },
+      {
+        "text": "我会弹钢琴",
+        "audioKey": "dialogue_body_01_a3",
+        "emoji": "🎹"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_body_01_a1": {
+        "text": "画画很需要想象力，你很有创意。",
+        "audioKey": "dialogue_body_01_f1"
+      },
+      "dialogue_body_01_a2": {
+        "text": "已经会写字了，真了不起。",
+        "audioKey": "dialogue_body_01_f2"
+      },
+      "dialogue_body_01_a3": {
+        "text": "会弹钢琴？那可不简单！",
+        "audioKey": "dialogue_body_01_f3"
+      }
+    }
+  },
+  {
+    "id": "body_02",
+    "topic": "body",
+    "pandaQuestion": "你跑步快不快？",
+    "pandaQuestionAudioKey": "dialogue_body_02_q",
+    "answers": [
+      {
+        "text": "我跑得很快",
+        "audioKey": "dialogue_body_02_a1",
+        "emoji": "🏃"
+      },
+      {
+        "text": "我跑得一般",
+        "audioKey": "dialogue_body_02_a2",
+        "emoji": "🚶"
+      },
+      {
+        "text": "我跑得不太快",
+        "audioKey": "dialogue_body_02_a3",
+        "emoji": "😅"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_body_02_a1": {
+        "text": "跑得快，身体一定很棒。",
+        "audioKey": "dialogue_body_02_f1"
+      },
+      "dialogue_body_02_a2": {
+        "text": "慢慢练，会越来越快的。",
+        "audioKey": "dialogue_body_02_f2"
+      },
+      "dialogue_body_02_a3": {
+        "text": "没关系，重在参与，多练就好。",
+        "audioKey": "dialogue_body_02_f3"
+      }
+    }
+  },
+  {
+    "id": "body_03",
+    "topic": "body",
+    "pandaQuestion": "累的时候身体想做什么？",
+    "pandaQuestionAudioKey": "dialogue_body_03_q",
+    "answers": [
+      {
+        "text": "我想睡觉",
+        "audioKey": "dialogue_body_03_a1",
+        "emoji": "😴"
+      },
+      {
+        "text": "我想坐下休息",
+        "audioKey": "dialogue_body_03_a2",
+        "emoji": "🛋️"
+      },
+      {
+        "text": "我想喝点水",
+        "audioKey": "dialogue_body_03_a3",
+        "emoji": "🥤"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_body_03_a1": {
+        "text": "睡一觉，精神就回来了。",
+        "audioKey": "dialogue_body_03_f1"
+      },
+      "dialogue_body_03_a2": {
+        "text": "歇一会儿，别太勉强。",
+        "audioKey": "dialogue_body_03_f2"
+      },
+      "dialogue_body_03_a3": {
+        "text": "补充水分，很有必要。",
+        "audioKey": "dialogue_body_03_f3"
+      }
+    }
+  },
+  {
+    "id": "play_01",
+    "topic": "play",
+    "pandaQuestion": "你有空的时候喜欢做什么？",
+    "pandaQuestionAudioKey": "dialogue_play_01_q",
+    "answers": [
+      {
+        "text": "我喜欢搭积木",
+        "audioKey": "dialogue_play_01_a1",
+        "emoji": "🧱"
+      },
+      {
+        "text": "我喜欢踢球",
+        "audioKey": "dialogue_play_01_a2",
+        "emoji": "⚽"
+      },
+      {
+        "text": "我喜欢看书",
+        "audioKey": "dialogue_play_01_a3",
+        "emoji": "📚"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_play_01_a1": {
+        "text": "搭积木很考验耐心，你很棒。",
+        "audioKey": "dialogue_play_01_f1"
+      },
+      "dialogue_play_01_a2": {
+        "text": "多运动，对身体好。",
+        "audioKey": "dialogue_play_01_f2"
+      },
+      "dialogue_play_01_a3": {
+        "text": "看书好，能学到很多东西。",
+        "audioKey": "dialogue_play_01_f3"
+      }
+    }
+  },
+  {
+    "id": "play_02",
+    "topic": "play",
+    "pandaQuestion": "你想学一样新本领吗？",
+    "pandaQuestionAudioKey": "dialogue_play_02_q",
+    "answers": [
+      {
+        "text": "我想学骑自行车",
+        "audioKey": "dialogue_play_02_a1",
+        "emoji": "🚲"
+      },
+      {
+        "text": "我想学游泳",
+        "audioKey": "dialogue_play_02_a2",
+        "emoji": "🏊"
+      },
+      {
+        "text": "我想学画画",
+        "audioKey": "dialogue_play_02_a3",
+        "emoji": "🎨"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_play_02_a1": {
+        "text": "学会了，就能骑着到处逛。",
+        "audioKey": "dialogue_play_02_f1"
+      },
+      "dialogue_play_02_a2": {
+        "text": "游泳是很好的运动，加油。",
+        "audioKey": "dialogue_play_02_f2"
+      },
+      "dialogue_play_02_a3": {
+        "text": "想学就去试，你一定行。",
+        "audioKey": "dialogue_play_02_f3"
+      }
+    }
+  },
+  {
+    "id": "play_03",
+    "topic": "play",
+    "pandaQuestion": "和朋友一起你想玩什么？",
+    "pandaQuestionAudioKey": "dialogue_play_03_q",
+    "answers": [
+      {
+        "text": "我想玩捉迷藏",
+        "audioKey": "dialogue_play_03_a1",
+        "emoji": "🏃"
+      },
+      {
+        "text": "我想玩拼图",
+        "audioKey": "dialogue_play_03_a2",
+        "emoji": "🧩"
+      },
+      {
+        "text": "我想玩游戏",
+        "audioKey": "dialogue_play_03_a3",
+        "emoji": "🎲"
+      }
+    ],
+    "pandaFollowUps": {
+      "dialogue_play_03_a1": {
+        "text": "捉迷藏最考验谁藏得好。",
+        "audioKey": "dialogue_play_03_f1"
+      },
+      "dialogue_play_03_a2": {
+        "text": "一起拼图，很有成就感。",
+        "audioKey": "dialogue_play_03_f2"
+      },
+      "dialogue_play_03_a3": {
+        "text": "一起玩，输赢都开心。",
+        "audioKey": "dialogue_play_03_f3"
+      }
     }
   }
 ]
