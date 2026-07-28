@@ -17,17 +17,17 @@ const GAME_INFO = [
   { id: "G1", name: "词语填空", icon: "🔤" },
   { id: "G2", name: "句子填空", icon: "📝" },
   { id: "G3", name: "泡泡爆爆", icon: "🫧" },
-  { id: "G4", name: "翻牌配对", icon: "🃏" },
+  { id: "G4", name: "听写小能手", icon: "👂" },
   { id: "G5", name: "火眼金睛", icon: "👀" },
   { id: "G6", name: "组词车间", icon: "🏭" },
   { id: "G7", name: "句子拼拼乐", icon: "🧩" },
   { id: "G8", name: "喂熊猫", icon: "🐼" },
 ];
 
-// Memory match only needs 3 (for 3 pairs); everything else wants at least
-// a target + a couple of distractors.
-const GAME_MIN_REQUIRED = { G1: 4, G2: 4, G3: 4, G4: 3, G5: 4, G6: 4, G7: 4, G8: 4 };
-const PICTURE_DEPENDENT_GAMES = new Set(["G4", "G8"]);
+// Each game wants at least a target plus a couple of distractors.
+const GAME_MIN_REQUIRED = { G1: 4, G2: 4, G3: 4, G4: 4, G5: 4, G6: 4, G7: 4, G8: 4 };
+// G4 is now dictation (no pictures), so only G8 needs picturable characters.
+const PICTURE_DEPENDENT_GAMES = new Set(["G8"]);
 
 function el(html) {
   const template = document.createElement("template");

@@ -560,6 +560,69 @@ button {
   background: var(--garden-green);
   border-radius: 3px;
 }
+
+/* ---------- G4 听写小能手 (dictation) ---------- */
+
+.dictation-slots {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+.dictation-slot {
+  min-width: 64px;
+  height: 80px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 3px dashed #bdbdbd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+  color: #bdbdbd;
+}
+.dictation-slot.filled {
+  background: #c8f7c5;
+  border-style: solid;
+  border-color: var(--garden-green);
+  color: var(--text-dark);
+}
+.dictation-replay {
+  font-size: 30px;
+}
+.dictation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+}
+.dictation-tile {
+  min-height: 88px;
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--text-dark);
+}
+.dictation-tile:active {
+  transform: scale(0.96);
+}
+.dictation-tile.used {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.dictation-tile.dictation-wrong {
+  animation: shake 0.4s ease;
+  background: #ffd6d6;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
 .voice-tile-label {
   font-size: 20px;
   font-weight: bold;

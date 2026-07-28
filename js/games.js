@@ -367,85 +367,95 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
 }
 
 // ============================================================
-// G4 — 翻牌配对 (memory match)
+// G4 — 听写小能手 (dictation hero): hear a word, tap its characters in
+// order. No pictures at all — a strong fit for abstract characters that
+// memory-match handled poorly. Words come from each character's own `word`;
+// 2-character words come first and any 3-character words last, so the
+// difficulty ramps up within the game.
 // ============================================================
 
-async function runG4(container, { newChars, charMap }) {
-  const three = newChars.slice(0, 3);
-  const entries = three.map((c) => charMap.get(c));
+async function runDictationRound(container, entry, charMap, distractorPool, introLine) {
+  const wordChars = [...entry.word]; // "好吃" -> ["好","吃"], "站起来" -> ["站","起","来"]
 
-  const cards = shuffle([
-    ...entries.map((e) => ({ kind: "char", char: e.char, display: e.char })),
-    ...entries.map((e) => ({ kind: "pic", char: e.char, display: charPictureHtml(e) })),
-  ]);
+  // Fill a 6-tile grid: the word's characters plus distractor characters
+  // that don't already appear in the word. The full charMap is a fallback so
+  // there are always enough tiles even with a tiny learned pool.
+  const used = new Set(wordChars);
+  const distractors = [];
+  const need = 6 - wordChars.length;
+  // Prefer the passed-in (learned) distractors; only fall back to the full
+  // character set if there still aren't enough tiles.
+  for (const cand of [...shuffle(distractorPool), ...shuffle([...charMap.values()])]) {
+    if (distractors.length >= need) break;
+    if (used.has(cand.char)) continue;
+    used.add(cand.char);
+    distractors.push(cand.char);
+  }
+  const tiles = shuffle([...wordChars, ...distractors]);
 
   const screen = el(`
     <div class="session-content">
-      <div class="memory-grid"></div>
+      <div class="dictation-slots"></div>
+      <button type="button" class="icon-button dictation-replay" aria-label="再听一次">🔊</button>
+      <div class="dictation-grid"></div>
     </div>
   `);
   container.replaceChildren(screen);
-  const grid = screen.querySelector(".memory-grid");
 
-  const cardEls = cards.map((card, i) => {
-    const cardEl = el(`
-      <button type="button" class="memory-card">
-        <span class="memory-card-back">🐼</span>
-        <span class="memory-card-front hidden">${card.display}</span>
-      </button>
-    `);
-    cardEl.dataset.char = card.char;
-    cardEl.dataset.index = String(i);
-    grid.appendChild(cardEl);
-    return cardEl;
-  });
+  const slotRow = screen.querySelector(".dictation-slots");
+  for (let i = 0; i < wordChars.length; i++) {
+    slotRow.appendChild(el(`<span class="dictation-slot" data-slot="${i}">＿</span>`));
+  }
+  const grid = screen.querySelector(".dictation-grid");
+  for (const ch of tiles) {
+    const tile = el(`<button type="button" class="dictation-tile">${ch}</button>`);
+    tile.dataset.char = ch;
+    grid.appendChild(tile);
+  }
+  screen.querySelector(".dictation-replay").addEventListener("click", () => playLine(`word_${entry.char}`));
 
-  let matchedCount = 0;
-  let busy = false;
-  let firstPick = null;
-
-  // Cards are rendered face-down above; playing the instruction here (not
-  // before) means she sees the board right away instead of a blank screen.
-  await playLine("gameInstruction_G4");
-
-  await new Promise((resolveGame) => {
-    cardEls.forEach((cardEl) => {
-      cardEl.addEventListener("click", async () => {
-        if (busy || cardEl.classList.contains("matched") || cardEl === firstPick) return;
-
-        cardEl.querySelector(".memory-card-front").classList.remove("hidden");
-        cardEl.querySelector(".memory-card-back").classList.add("hidden");
-
-        if (!firstPick) {
-          firstPick = cardEl;
-          return;
-        }
-
-        busy = true;
-        const isMatch = firstPick.dataset.char === cardEl.dataset.char;
-        if (isMatch) {
-          firstPick.classList.add("matched");
-          cardEl.classList.add("matched");
-          matchedCount++;
-          await playLine(`char_${cardEl.dataset.char}`);
-          firstPick = null;
-          busy = false;
-          if (matchedCount === three.length) resolveGame();
-        } else {
-          await playLine(pickVariant("tryAgain", 3));
-          await new Promise((r) => setTimeout(r, 500));
-          [firstPick, cardEl].forEach((c) => {
-            c.querySelector(".memory-card-front").classList.add("hidden");
-            c.querySelector(".memory-card-back").classList.remove("hidden");
-          });
-          firstPick = null;
-          busy = false;
-        }
-      });
+  // Handler is live before the audio plays, so she can start whenever.
+  let expected = 0;
+  const done = new Promise((resolve) => {
+    grid.addEventListener("click", (e) => {
+      const tile = e.target.closest(".dictation-tile");
+      if (!tile || tile.classList.contains("used")) return;
+      if (tile.dataset.char === wordChars[expected]) {
+        tile.classList.add("used");
+        const slot = slotRow.querySelector(`[data-slot="${expected}"]`);
+        slot.textContent = tile.dataset.char;
+        slot.classList.add("filled");
+        expected++;
+        if (expected === wordChars.length) resolve();
+      } else {
+        tile.classList.add("dictation-wrong");
+        setTimeout(() => tile.classList.remove("dictation-wrong"), 400);
+        playLine(pickVariant("tryAgain", 3));
+      }
     });
   });
 
+  if (introLine) await playLine(introLine);
+  await playLine(`word_${entry.char}`);
+  await done;
+
   await playLine(pickVariant("praise", 5));
+  await new Promise((r) => setTimeout(r, 500));
+}
+
+async function runG4(container, { newChars, distractorChars, charMap }) {
+  let introLine = "gameInstruction_G4";
+  const targets = newChars
+    .map((c) => charMap.get(c))
+    .filter((e) => e && e.word && e.word.length >= 2)
+    .sort((a, b) => a.word.length - b.word.length); // 2-char words before 3-char
+
+  const distractorPool = distractorChars.map((c) => charMap.get(c)).filter(Boolean);
+
+  for (const entry of targets) {
+    await runDictationRound(container, entry, charMap, distractorPool, introLine);
+    introLine = null;
+  }
 }
 
 // ============================================================

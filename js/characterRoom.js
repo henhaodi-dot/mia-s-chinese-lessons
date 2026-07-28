@@ -29,11 +29,12 @@ import { runGame } from "./games.js";
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
 // 3 pairs regardless. G3 (bubble) runs one timed round per character.
-const GAME_ROUNDS = { G1: 9, G2: 5, G3: 8, G4: 3, G5: 7, G6: 6, G7: 4, G8: 8 };
+const GAME_ROUNDS = { G1: 9, G2: 5, G3: 8, G4: 7, G5: 7, G6: 6, G7: 4, G8: 8 };
 
 // These games render a character's picture, so they can only use characters
-// that have one (particles like 的/了 don't).
-const PICTURE_DEPENDENT_GAMES = new Set(["G4", "G8"]);
+// that have one (particles like 的/了 don't). G4 is now dictation (no
+// pictures), so it's deliberately NOT here — it works great for particles.
+const PICTURE_DEPENDENT_GAMES = new Set(["G8"]);
 
 function el(html) {
   const template = document.createElement("template");
