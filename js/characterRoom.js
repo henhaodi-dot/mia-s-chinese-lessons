@@ -29,7 +29,7 @@ import { runGame } from "./games.js";
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
 // 3 pairs regardless. G3 (bubble) runs one timed round per character.
-const GAME_ROUNDS = { G1: 9, G2: 5, G3: 8, G4: 7, G5: 7, G6: 6, G7: 4, G8: 8 };
+const GAME_ROUNDS = { G1: 9, G2: 4, G3: 8, G4: 7, G5: 7, G6: 6, G7: 4, G8: 8 };
 
 // These games render a character's picture, so they can only use characters
 // that have one (particles like 的/了 don't). G4 is now dictation (no
@@ -144,9 +144,19 @@ export function buildGameSet(progress) {
   const fastPool = ["G3", "G8"].filter(notLast);
   const fast = pick(fastPool.length ? fastPool : ["G3", "G8"]);
 
-  const restCandidates = ["G2", "G5", "G6", "G7"].filter((g) => g !== writing && g !== fast);
-  const restPool = restCandidates.filter(notLast);
-  const third = pick(restPool.length ? restPool : restCandidates);
+  // G2 你来说 (speaking game) is woven in every other visit, so speaking
+  // practice keeps showing up in the character room too.
+  const visitCount = progress.characterRoom?.visitCount || 0;
+  const forceSpeaking = visitCount % 2 === 0 && writing !== "G2" && fast !== "G2";
+
+  let third;
+  if (forceSpeaking) {
+    third = "G2";
+  } else {
+    const restCandidates = ["G2", "G5", "G6", "G7"].filter((g) => g !== writing && g !== fast);
+    const restPool = restCandidates.filter(notLast);
+    third = pick(restPool.length ? restPool : restCandidates);
+  }
 
   return shuffle([writing, fast, third]);
 }
@@ -197,6 +207,7 @@ async function runGameSession(container, progress, charMap, todaysNewChars) {
 
   if (!progress.characterRoom) progress.characterRoom = {};
   progress.characterRoom.lastGames = games;
+  progress.characterRoom.visitCount = (progress.characterRoom.visitCount || 0) + 1;
   saveProgress(progress);
 }
 

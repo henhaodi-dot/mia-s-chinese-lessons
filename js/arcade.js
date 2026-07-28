@@ -15,7 +15,7 @@ import { runGame, GAME_IDS } from "./games.js";
 
 const GAME_INFO = [
   { id: "G1", name: "词语填空", icon: "🔤" },
-  { id: "G2", name: "句子填空", icon: "📝" },
+  { id: "G2", name: "你来说", icon: "🎤" },
   { id: "G3", name: "泡泡爆爆", icon: "🫧" },
   { id: "G4", name: "听写小能手", icon: "👂" },
   { id: "G5", name: "火眼金睛", icon: "👀" },

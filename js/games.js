@@ -8,6 +8,8 @@
 import { playLine, pickVariant, playChime } from "./audio.js";
 import { recordGameSeen } from "./progress.js";
 import { charPictureHtml } from "./garden.js";
+import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
+import { saveRecording } from "./recordings.js";
 
 export const GAME_IDS = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"];
 
@@ -219,37 +221,86 @@ async function runG1(container, { newChars, distractorChars, charMap }) {
 }
 
 // ============================================================
-// G2 — 句子填空 (sentence fill-blank)
+// G2 — 你来说 (your turn to say it): a speaking game inside the character
+// room. For each of a few characters the panda says its word (she records
+// herself saying it), then reads it in a sentence (she records that too).
+// Recordings save to the same voice store as the speaking room, so they
+// also show up in 我的声音 — this is the bridge between the two rooms.
+// Needs the mic; if it's unavailable or denied, the game skips gracefully
+// so the game session isn't blocked.
 // ============================================================
 
-async function runG2(container, { newChars, distractorChars, charMap }) {
-  let introLine = "gameInstruction_G2";
+async function sayItBeat(container, stream, entry, kind) {
+  const modelKey = `${kind}_${entry.char}`;
+  const text = kind === "word" ? entry.word : entry.sentence;
+  const textClass = kind === "word" ? "big-character echo-word-text" : "story-text";
 
-  for (const char of shuffle(newChars)) {
-    const entry = charMap.get(char);
-    const blankSentence = entry.sentence.replace(char, "＿");
-    const otherNewChars = newChars.filter((c) => c !== char).map((c) => charMap.get(c));
-    const choicesPool = shuffle([...otherNewChars, ...distractorChars.map((c) => charMap.get(c))]).slice(0, 3);
-    const choices = shuffle([entry, ...choicesPool]);
+  container.replaceChildren(
+    el(`
+      <div class="session-content">
+        <div class="speaking-modeler">🐼</div>
+        <div class="${textClass}">${text}</div>
+      </div>
+    `)
+  );
+  await playLine(modelKey);
+  await playLine("echoInstruction");
 
-    await runToCorrectTap(
-      container,
-      () => {
-        const screen = el(`
-          <div class="session-content">
-            <div class="story-text">${blankSentence}</div>
-            <div class="choice-grid"></div>
-          </div>
-        `);
-        const grid = screen.querySelector(".choice-grid");
-        for (const choice of choices) grid.appendChild(makeTile(choice.char, choice.char));
-        screen.dataset.pendingAudio = `sentence_${char}`;
-        return screen;
-      },
-      char,
-      introLine
-    );
-    introLine = null;
+  let take = await recordWithUI(container, stream);
+  if (!take.hadSpeech) {
+    await playLine("echoRetry");
+    take = await recordWithUI(container, stream);
+  }
+  await playLine("listenToYourself");
+  await playBlob(take.blob);
+
+  await saveRecording({
+    id: modelKey,
+    blob: take.blob,
+    char: entry.char,
+    kind,
+    text,
+    durationMs: take.durationMs,
+    rms: take.rms,
+    modelKey,
+    createdAt: Date.now(),
+  });
+
+  const compare = el(`
+    <div class="session-content">
+      <div class="big-emoji echo-star">⭐</div>
+      <div class="echo-compare-row">
+        <button type="button" class="icon-button echo-compare-button" id="g2-model" aria-label="再听一次熊猫的读音">🐼</button>
+        <button type="button" class="icon-button echo-compare-button" id="g2-mine" aria-label="再听一次我的声音">🌸</button>
+      </div>
+      <button type="button" class="big-button" id="g2-continue">继续</button>
+    </div>
+  `);
+  container.replaceChildren(compare);
+  await playLine("echoDone");
+  compare.querySelector("#g2-model").addEventListener("click", () => playLine(modelKey));
+  compare.querySelector("#g2-mine").addEventListener("click", () => playBlob(take.blob));
+  await new Promise((resolve) => {
+    compare.querySelector("#g2-continue").addEventListener("click", resolve, { once: true });
+  });
+}
+
+async function runG2(container, { newChars, charMap, progress }) {
+  if (!isRecordingSupported()) return; // no mic support — skip, don't block the session
+  const stream = await ensureMicPermission(container, progress);
+  if (!stream) return; // denied — skip gracefully
+
+  await playLine("gameInstruction_G2");
+  const chars = shuffle(newChars).slice(0, 4);
+  try {
+    for (const char of chars) {
+      const entry = charMap.get(char);
+      if (!entry) continue;
+      await sayItBeat(container, stream, entry, "word");
+      await sayItBeat(container, stream, entry, "sentence");
+    }
+  } finally {
+    stream.getTracks().forEach((track) => track.stop());
   }
 }
 
