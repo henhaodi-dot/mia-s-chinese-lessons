@@ -10,6 +10,7 @@
 // knows them and should see their real stage immediately.
 
 import { addDaysToLocalDateString } from "./progress.js";
+import { isResting } from "./rest.js";
 
 export const BOX_INTERVAL_DAYS = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 16 };
 export const GOLDEN_MAINTENANCE_INTERVAL_DAYS = 30;
@@ -58,7 +59,7 @@ function nextDueDate(fromBox, toBox, todayStr) {
 // capped at 8 so a missed week never turns into a pile-up.
 export function buildDueQueue(progress, todayStr, maxItems = 8) {
   const due = Object.entries(progress.characters)
-    .filter(([, state]) => isDue(state, todayStr))
+    .filter(([, state]) => isDue(state, todayStr) && !isResting(state, todayStr))
     .sort((a, b) => (a[1].nextDue < b[1].nextDue ? -1 : a[1].nextDue > b[1].nextDue ? 1 : 0));
 
   return due.slice(0, maxItems).map(([char]) => char);
@@ -77,7 +78,22 @@ export function countLearnedToday(progress, todayStr) {
 // Total due reviews, uncapped — used for the auto-throttle decision, which
 // cares about total workload, not just what fits in one session's cap of 8.
 export function countAllDue(progress, todayStr) {
-  return Object.values(progress.characters).filter((state) => isDue(state, todayStr)).length;
+  return Object.values(progress.characters).filter(
+    (state) => isDue(state, todayStr) && !isResting(state, todayStr)
+  ).length;
+}
+
+// The order new characters are introduced in: a parent-set custom order if
+// present (Parent Corner reorder tool), otherwise rank order. Robust to a
+// stored order that predates newly-added characters — those are appended in
+// rank order so nothing is ever unreachable.
+export function getCharacterOrder(progress, allCharacters) {
+  const byRank = [...allCharacters].sort((a, b) => a.rank - b.rank).map((e) => e.char);
+  if (Array.isArray(progress.characterOrder) && progress.characterOrder.length) {
+    const seen = new Set(progress.characterOrder);
+    return [...progress.characterOrder, ...byRank.filter((c) => !seen.has(c))];
+  }
+  return byRank;
 }
 
 // Auto-throttle: a heavy review day quietly reduces how many new
@@ -103,7 +119,11 @@ export function pickTodaysNewCharacters(progress, allCharacters, todayStr) {
   const remaining = Math.max(0, budget - learnedToday);
   if (remaining < 1) return [];
 
-  const sorted = [...allCharacters].sort((a, b) => a.rank - b.rank);
-  const candidates = sorted.filter((entry) => !progress.characters[entry.char]);
+  const byChar = new Map(allCharacters.map((entry) => [entry.char, entry]));
+  const order = getCharacterOrder(progress, allCharacters);
+  const candidates = order
+    .filter((char) => !progress.characters[char])
+    .map((char) => byChar.get(char))
+    .filter(Boolean);
   return candidates.slice(0, remaining);
 }

@@ -6,8 +6,16 @@
 // own instruction audio, and resolving once the child has finished it.
 
 import { playLine, pickVariant, playChime } from "./audio.js";
-import { recordGameSeen } from "./progress.js";
+import { recordGameSeen, recordMiss, todayLocalDateString } from "./progress.js";
 import { charPictureHtml } from "./garden.js";
+
+// Records one miss toward the auto-shelve counter. Callers dedupe to at most
+// one miss per prompt, and only the recognition games call it (fast games
+// like bubble-pop would over-count a quick fumble), so a character only
+// rests when she genuinely can't recognise it across several sessions.
+function noteMiss(progress, char) {
+  if (progress) recordMiss(progress, char, todayLocalDateString());
+}
 import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
 import { saveRecording } from "./recordings.js";
 
@@ -162,9 +170,10 @@ async function handleTapResult(container, tile, isCorrect) {
 // (not before) — the game's spoken instruction used to gate the very first
 // render, leaving a blank screen for however long that line took to
 // load/play, which reads as "the game doesn't work" on a slow connection.
-async function runToCorrectTap(container, buildScreen, correctChar, introLine) {
+async function runToCorrectTap(container, buildScreen, correctChar, introLine, progress) {
   let tile;
   let firstPass = true;
+  let recordedMiss = false;
   do {
     const screen = buildScreen();
     container.replaceChildren(screen);
@@ -178,6 +187,10 @@ async function runToCorrectTap(container, buildScreen, correctChar, introLine) {
     }
     tile = await tapPromise;
     const isCorrect = tile.dataset.answerChar === correctChar;
+    if (!isCorrect && !recordedMiss) {
+      noteMiss(progress, correctChar); // one miss per prompt
+      recordedMiss = true;
+    }
     await handleTapResult(container, tile, isCorrect);
     if (!isCorrect) continue;
     break;
@@ -189,7 +202,7 @@ async function runToCorrectTap(container, buildScreen, correctChar, introLine) {
 // G1 — 词语填空 (word fill-blank)
 // ============================================================
 
-async function runG1(container, { newChars, distractorChars, charMap }) {
+async function runG1(container, { newChars, distractorChars, charMap, progress }) {
   let introLine = "gameInstruction_G1";
 
   for (const char of shuffle(newChars)) {
@@ -214,7 +227,8 @@ async function runG1(container, { newChars, distractorChars, charMap }) {
         return screen;
       },
       char,
-      introLine
+      introLine,
+      progress
     );
     introLine = null;
   }
@@ -425,7 +439,7 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
 // difficulty ramps up within the game.
 // ============================================================
 
-async function runDictationRound(container, entry, charMap, distractorPool, introLine) {
+async function runDictationRound(container, entry, charMap, distractorPool, introLine, progress) {
   const wordChars = [...entry.word]; // "好吃" -> ["好","吃"], "站起来" -> ["站","起","来"]
 
   // Fill a 6-tile grid: the word's characters plus distractor characters
@@ -467,6 +481,7 @@ async function runDictationRound(container, entry, charMap, distractorPool, intr
 
   // Handler is live before the audio plays, so she can start whenever.
   let expected = 0;
+  let recordedMiss = false;
   const done = new Promise((resolve) => {
     grid.addEventListener("click", (e) => {
       const tile = e.target.closest(".dictation-tile");
@@ -479,6 +494,10 @@ async function runDictationRound(container, entry, charMap, distractorPool, intr
         expected++;
         if (expected === wordChars.length) resolve();
       } else {
+        if (!recordedMiss) {
+          noteMiss(progress, entry.char); // one miss per round
+          recordedMiss = true;
+        }
         tile.classList.add("dictation-wrong");
         setTimeout(() => tile.classList.remove("dictation-wrong"), 400);
         playLine(pickVariant("tryAgain", 3));
@@ -494,7 +513,7 @@ async function runDictationRound(container, entry, charMap, distractorPool, intr
   await new Promise((r) => setTimeout(r, 500));
 }
 
-async function runG4(container, { newChars, distractorChars, charMap }) {
+async function runG4(container, { newChars, distractorChars, charMap, progress }) {
   let introLine = "gameInstruction_G4";
   const targets = newChars
     .map((c) => charMap.get(c))
@@ -504,7 +523,7 @@ async function runG4(container, { newChars, distractorChars, charMap }) {
   const distractorPool = distractorChars.map((c) => charMap.get(c)).filter(Boolean);
 
   for (const entry of targets) {
-    await runDictationRound(container, entry, charMap, distractorPool, introLine);
+    await runDictationRound(container, entry, charMap, distractorPool, introLine, progress);
     introLine = null;
   }
 }
@@ -536,7 +555,8 @@ async function runG5(container, { newChars, charMap, progress }) {
         return screen;
       },
       char,
-      introLine
+      introLine,
+      progress
     );
     introLine = null;
   }
@@ -558,7 +578,7 @@ function pickWrongPartners(count, excludeChars, charMap, preferredChars) {
   return [...preferred, ...fallbackPool].slice(0, count);
 }
 
-async function runG6(container, { newChars, distractorChars, charMap }) {
+async function runG6(container, { newChars, distractorChars, charMap, progress }) {
   let introLine = "gameInstruction_G6";
 
   for (const char of shuffle(newChars)) {
@@ -573,6 +593,7 @@ async function runG6(container, { newChars, distractorChars, charMap }) {
     const candidateChars = shuffle([partner, ...wrongPartners]);
 
     let tile;
+    let recordedMiss = false;
     do {
       const screen = el(`
         <div class="session-content">
@@ -610,6 +631,10 @@ async function runG6(container, { newChars, distractorChars, charMap }) {
         // screen jumps to the next character's prompt.
         await new Promise((r) => setTimeout(r, 1200));
       } else {
+        if (!recordedMiss) {
+          noteMiss(progress, char); // one miss per prompt
+          recordedMiss = true;
+        }
         await handleTapResult(container, tile, false);
       }
     } while (tile.dataset.answerChar !== partner);
@@ -708,7 +733,7 @@ async function runG7(container, { newChars, charMap }) {
 // G8 — 喂熊猫 (feed the panda)
 // ============================================================
 
-async function runG8(container, { newChars, distractorChars, charMap }) {
+async function runG8(container, { newChars, distractorChars, charMap, progress }) {
   let introLine = "gameInstruction_G8";
 
   for (const char of shuffle(newChars)) {
@@ -718,6 +743,7 @@ async function runG8(container, { newChars, distractorChars, charMap }) {
     const choices = shuffle([entry, ...choicesPool]);
 
     let tile;
+    let recordedMiss = false;
     do {
       const screen = el(`
         <div class="session-content">
@@ -742,6 +768,10 @@ async function runG8(container, { newChars, distractorChars, charMap }) {
         await playLine(pickVariant("praise", 5));
         await new Promise((r) => setTimeout(r, 500));
       } else {
+        if (!recordedMiss) {
+          noteMiss(progress, char); // one miss per prompt
+          recordedMiss = true;
+        }
         await handleTapResult(container, tile, false);
       }
     } while (tile.dataset.answerChar !== char);

@@ -438,5 +438,9 @@
   "characterWelcome": {
     "text": "我们一起来认认字、玩游戏吧！",
     "pinyin": "Wǒmen yìqǐ lái rènren zì, wán yóuxì ba!"
+  },
+  "restReintro": {
+    "text": "这个字休息好了，还记得它吗？我们再看一次。",
+    "pinyin": "Zhège zì xiūxi hǎo le, hái jìde tā ma? Wǒmen zài kàn yí cì."
   }
 }

@@ -297,6 +297,17 @@ button {
   letter-spacing: 1px;
 }
 
+/* A resting (auto-shelved) plant: dimmed, asleep — not dead. */
+.plant-tile.resting {
+  opacity: 0.5;
+}
+.plant-pillow {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 16px;
+}
+
 .plant-visitors {
   position: absolute;
   bottom: -6px;
@@ -1454,6 +1465,73 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* resting-character list */
+.parent-resting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.resting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.resting-char {
+  font-size: 28px;
+  font-weight: bold;
+}
+.resting-until {
+  flex: 1;
+  color: var(--text-dark);
+  font-size: 14px;
+}
+.resting-wake {
+  font-size: 14px;
+}
+
+/* learning-order reorder tool */
+.reorder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reorder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--card-bg);
+  border-radius: 12px;
+}
+.reorder-num {
+  width: 24px;
+  color: #90a4ae;
+  font-size: 13px;
+  text-align: right;
+}
+.reorder-char {
+  font-size: 26px;
+  font-weight: bold;
+}
+.reorder-meta {
+  flex: 1;
+  font-size: 13px;
+  color: #78909c;
+}
+.reorder-controls {
+  display: flex;
+  gap: 6px;
+}
+.reorder-btn {
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 18px;
+}
+.reorder-btn:disabled {
+  opacity: 0.3;
 }
 
 .history-row {

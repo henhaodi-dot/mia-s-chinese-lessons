@@ -3,8 +3,13 @@
 // else goes through the functions here so the storage format can change
 // (via schemaVersion + a migration step) without touching the rest of the app.
 
+// rest.js imports addDaysToLocalDateString back from here — a circular
+// import that's safe because every use is deferred to call time, never
+// module-evaluation time.
+import { isResting, recentMissCount, shelve, MISS_THRESHOLD } from "./rest.js";
+
 const STORAGE_KEY = "hanziGardenProgress";
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 // ---------- local-date helpers ----------
 // Everything in this app keys off the device's local calendar date, never
@@ -90,6 +95,13 @@ function migrate(progress) {
   // everywhere it's used. No per-character loop needed; existing box/
   // nextDue/shaky data is untouched either way.
 
+  // v4 adds: per-character restUntil (null/absent = active), recentMisses[]
+  // (rolling miss log for auto-shelve), needsReintro; plus top-level
+  // sessionSeq (review-session counter) and characterOrder (custom new-char
+  // sequence). All read as "absent = default" everywhere (isResting treats
+  // no restUntil as active, recentMisses||[], characterOrder falls back to
+  // rank order), so existing data needs no touch-up.
+
   progress.schemaVersion = SCHEMA_VERSION;
   return progress;
 }
@@ -135,6 +147,31 @@ export function setShaky(progress, char, isShaky) {
   const state = progress.characters[char];
   if (!state) return;
   state.shaky = isShaky;
+}
+
+// ---------- v4: review sessions + auto-shelve miss tracking ----------
+
+// Bumped at the start of every review session (a character-room game set, a
+// garden tap review, an exit test) so recentMisses can be windowed to "the
+// last N sessions".
+export function startReviewSession(progress) {
+  progress.sessionSeq = (progress.sessionSeq || 0) + 1;
+  return progress.sessionSeq;
+}
+
+// Logs one miss for a character in the current session and shelves it if it
+// has now missed too many times within the recent-session window. No-op for
+// a character that's already resting or unknown.
+export function recordMiss(progress, char, todayStr) {
+  const state = progress.characters[char];
+  if (!state || isResting(state, todayStr)) return;
+  const seq = progress.sessionSeq || 0;
+  if (!state.recentMisses) state.recentMisses = [];
+  state.recentMisses.push(seq);
+  if (state.recentMisses.length > 12) state.recentMisses = state.recentMisses.slice(-12);
+  if (recentMissCount(state, seq) >= MISS_THRESHOLD) {
+    shelve(progress, char, todayStr);
+  }
 }
 
 export function isShaky(progress, char) {

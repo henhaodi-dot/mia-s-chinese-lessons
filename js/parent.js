@@ -8,8 +8,9 @@ import {
   exportProgressJson,
   importProgressJson,
 } from "./progress.js";
-import { growthStageFor, isDue, pickTodaysNewCharacters } from "./scheduler.js";
+import { growthStageFor, isDue, pickTodaysNewCharacters, getCharacterOrder } from "./scheduler.js";
 import { getStoryForTriple, warmStoriesCache } from "./stories.js";
+import { restingCharacters, wake } from "./rest.js";
 
 const STAGE_NAMES = ["种子", "发芽", "小苗", "花苞", "开花", "金花"];
 const STAR_EMOJI = { 1: "⭐", 2: "⭐⭐", 3: "⭐⭐⭐" };
@@ -95,6 +96,18 @@ export function renderParentContent(progress, charMap, onChange) {
     </section>
 
     <section class="parent-section">
+      <h3>休息中的字 💤</h3>
+      <p class="parent-hint">连续答错较多的字会自动休息两周，之后温柔地重新认识。你也可以提前叫醒它。最多同时休息 5 个字。</p>
+      <div id="resting-list" class="parent-resting-list"></div>
+    </section>
+
+    <section class="parent-section">
+      <h3>调整学习顺序</h3>
+      <p class="parent-hint">下面是接下来要学的字。把太难的字（比如 家、爱）往后移，她就会晚一点学到。已经学过的字不受影响。</p>
+      <div id="reorder-list" class="reorder-list"></div>
+    </section>
+
+    <section class="parent-section">
       <h3>最近的学习记录</h3>
       <div id="session-history-list" class="parent-history-list"></div>
     </section>
@@ -128,6 +141,8 @@ export function renderParentContent(progress, charMap, onChange) {
 
   fillSettingsFields(progress);
   renderProgressTable(progress, charMap);
+  renderRestingList(progress, charMap, onChange);
+  renderReorderList(progress, charMap);
   renderSessionHistory(progress, charMap);
   checkMissingImages(progress, charMap);
   checkStoryCoverage(progress, charMap);
@@ -176,6 +191,96 @@ function renderProgressTable(progress, charMap) {
       }
     </tbody>
   `;
+}
+
+// ---------- resting characters (auto-shelve) ----------
+
+function renderRestingList(progress, charMap, onChange) {
+  const container = document.getElementById("resting-list");
+  if (!container) return;
+  const today = todayLocalDateString();
+  const resting = restingCharacters(progress, today);
+
+  if (resting.length === 0) {
+    container.innerHTML = `<p class="empty-state-message">现在没有休息中的字。</p>`;
+    return;
+  }
+
+  container.innerHTML = resting
+    .map(
+      ({ char, restUntil }) => `
+        <div class="resting-row">
+          <span class="resting-char">${char}</span>
+          <span class="resting-until">睡到 ${restUntil}</span>
+          <button type="button" class="icon-button parent-action-button resting-wake" data-char="${char}">叫醒</button>
+        </div>
+      `
+    )
+    .join("");
+
+  container.querySelectorAll(".resting-wake").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      wake(progress, btn.dataset.char, todayLocalDateString());
+      saveProgress(progress);
+      renderRestingList(progress, charMap, onChange);
+      renderProgressTable(progress, charMap);
+      onChange?.();
+    });
+  });
+}
+
+// ---------- learning-order reorder tool ----------
+
+function moveInLearningOrder(progress, charMap, char, dir) {
+  const allChars = Array.from(charMap.values());
+  const order = getCharacterOrder(progress, allChars);
+  const upcoming = order.filter((c) => !progress.characters[c]);
+  const uIdx = upcoming.indexOf(char);
+  const swapWith = upcoming[uIdx + dir];
+  if (!swapWith) return; // already at the boundary of the upcoming list
+  const i = order.indexOf(char);
+  const j = order.indexOf(swapWith);
+  [order[i], order[j]] = [order[j], order[i]];
+  progress.characterOrder = order;
+  saveProgress(progress);
+}
+
+function renderReorderList(progress, charMap) {
+  const container = document.getElementById("reorder-list");
+  if (!container) return;
+  const allChars = Array.from(charMap.values());
+  const order = getCharacterOrder(progress, allChars);
+  const byChar = new Map(allChars.map((e) => [e.char, e]));
+  const upcoming = order.filter((c) => !progress.characters[c]).slice(0, 20);
+
+  if (upcoming.length === 0) {
+    container.innerHTML = `<p class="empty-state-message">所有字都已经开始学了。</p>`;
+    return;
+  }
+
+  container.innerHTML = upcoming
+    .map((char, i) => {
+      const entry = byChar.get(char);
+      return `
+        <div class="reorder-row">
+          <span class="reorder-num">${i + 1}</span>
+          <span class="reorder-char">${char}</span>
+          <span class="reorder-meta">${entry ? `${entry.pinyin} · ${entry.meaning}` : ""}</span>
+          <span class="reorder-controls">
+            <button type="button" class="icon-button reorder-btn" data-char="${char}" data-dir="-1" ${i === 0 ? "disabled" : ""}>↑</button>
+            <button type="button" class="icon-button reorder-btn" data-char="${char}" data-dir="1" ${i === upcoming.length - 1 ? "disabled" : ""}>↓</button>
+          </span>
+        </div>
+      `;
+    })
+    .join("");
+
+  container.querySelectorAll(".reorder-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      moveInLearningOrder(progress, charMap, btn.dataset.char, Number(btn.dataset.dir));
+      renderReorderList(progress, charMap);
+    });
+  });
 }
 
 // Newest first, capped at 10 — sessionLog itself already caps at 60

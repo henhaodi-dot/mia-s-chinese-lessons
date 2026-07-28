@@ -2,7 +2,7 @@
 // kicks off a daily session when the start button is tapped.
 
 import { loadCharacterMap } from "./data.js";
-import { loadProgress, todayLocalDateString } from "./progress.js";
+import { loadProgress, saveProgress, todayLocalDateString } from "./progress.js";
 import { growthStageFor, isDue } from "./scheduler.js";
 import { unlockAudio } from "./audio.js";
 import { runDailySession } from "./session.js";
@@ -24,6 +24,7 @@ import { runCharacterRoom } from "./characterRoom.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
 import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
+import { isResting, processWakeups } from "./rest.js";
 
 let progress;
 let charMap;
@@ -84,18 +85,20 @@ function renderGardenGrid() {
   for (const [char, state] of learned) {
     const entry = charMap.get(char);
     const stage = growthStageFor(state, today);
-    const due = isDue(state, today);
+    const resting = isResting(state, today);
+    const due = isDue(state, today) && !resting; // resting plants don't ask to be watered
     const heartsToday = getHeartsToday(state, today);
     const visitors = state.visitors || [];
 
     const tile = document.createElement("button");
     tile.type = "button";
-    tile.className = "plant-tile" + (due ? " due shimmer" : "");
+    tile.className = "plant-tile" + (due ? " due shimmer" : "") + (resting ? " resting" : "");
     tile.innerHTML = `
       <span class="plant-emoji">${STAGE_EMOJI[stage]}</span>
       <span class="plant-char">${char}</span>
+      ${resting ? `<span class="plant-pillow" aria-label="休息中">💤</span>` : ""}
       ${
-        heartsToday > 0
+        !resting && heartsToday > 0
           ? `<span class="plant-hearts">${"❤️".repeat(heartsToday)}${"🤍".repeat(HEART_DAILY_CAP - heartsToday)}</span>`
           : ""
       }
@@ -112,6 +115,12 @@ function renderGardenGrid() {
 
 async function handlePlantTap(char) {
   await unlockAudio();
+  // A resting plant isn't reviewed — just show its card so she can still
+  // visit it (and the parent knows why it's asleep).
+  if (isResting(progress.characters[char], todayLocalDateString())) {
+    showCardModal(char, charMap, { withReplay: true });
+    return;
+  }
   const outcome = await runGardenTapReview(char, charMap, progress);
   renderGardenGrid();
   renderStreakCalendar(progress);
@@ -174,6 +183,13 @@ async function main() {
 
   charMap = await loadCharacterMap();
   progress = loadProgress();
+
+  // Wake any characters whose two-week rest has ended, so the garden and
+  // review pool reflect it immediately (the gentle reintro itself happens
+  // when she next enters the character room).
+  if (processWakeups(progress, todayLocalDateString()).length > 0) {
+    saveProgress(progress);
+  }
 
   renderGardenGrid();
   renderStreakCalendar(progress);

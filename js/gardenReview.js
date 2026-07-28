@@ -8,7 +8,7 @@
 // hinted once its mistake count hits the same showHintAfterMisses threshold
 // used for the quiz itself (2, per spec). Success = at most 1 hinted stroke.
 
-import { todayLocalDateString, saveProgress } from "./progress.js";
+import { todayLocalDateString, saveProgress, startReviewSession, recordMiss } from "./progress.js";
 import { isDue } from "./scheduler.js";
 import { playLine, pickVariant } from "./audio.js";
 import { runWriteFromMemoryQuiz } from "./strokes.js";
@@ -116,6 +116,7 @@ export async function runGardenTapReview(char, charMap, progress) {
 
   const today = todayLocalDateString();
   const wasDue = isDue(state, today);
+  startReviewSession(progress); // window for auto-shelve miss counting
 
   const { overlay, container } = getOverlayElements();
   overlay.classList.remove("hidden");
@@ -136,6 +137,7 @@ export async function runGardenTapReview(char, charMap, progress) {
 
   // 3. Apply the core rule — the only place box/nextDue/hearts change.
   const outcomeResult = applyGardenTapOutcome(state, { isDue: wasDue, struggled }, today);
+  if (struggled) recordMiss(progress, char, today); // may shelve after enough recent misses
   saveProgress(progress);
 
   // 4. Completion beat.

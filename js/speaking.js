@@ -18,6 +18,7 @@
 import { playLine, playSequence } from "./audio.js";
 import { todayLocalDateString, daysBetweenLocalDateStrings, saveProgress } from "./progress.js";
 import { isDue } from "./scheduler.js";
+import { isResting } from "./rest.js";
 import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
 import { saveRecording } from "./recordings.js";
 import { loadDialogues } from "./data.js";
@@ -50,6 +51,7 @@ function shuffle(array) {
 function pickWeightedChars(progress, charMap, count) {
   const today = todayLocalDateString();
   const scored = Object.keys(progress.characters)
+    .filter((char) => !isResting(progress.characters[char], today)) // resting chars rest everywhere
     .map((char) => charMap.get(char))
     .filter(Boolean)
     .map((entry) => {

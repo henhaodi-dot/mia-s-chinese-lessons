@@ -20,8 +20,10 @@ import {
   daysBetweenLocalDateStrings,
   seedCharacter,
   saveProgress,
+  startReviewSession,
 } from "./progress.js";
 import { isDue, pickTodaysNewCharacters } from "./scheduler.js";
+import { isResting, processWakeups } from "./rest.js";
 import { animateCharacterOnce, runTraceHintQuiz } from "./strokes.js";
 import { charPictureHtml } from "./garden.js";
 import { runGame } from "./games.js";
@@ -85,8 +87,9 @@ function weightedSample(entries, progress, today, count) {
   return picked;
 }
 
-function learnedEntries(progress, charMap, picturableOnly) {
+function learnedEntries(progress, charMap, picturableOnly, today) {
   return Object.keys(progress.characters)
+    .filter((char) => !isResting(progress.characters[char], today)) // resting chars are out of the review pool
     .map((char) => charMap.get(char))
     .filter(Boolean)
     .filter((entry) => !picturableOnly || entry.picturable !== false);
@@ -103,7 +106,7 @@ export function charsForGame(gameId, progress, charMap, todaysNewChars, today) {
     .filter((entry) => entry && (!picturable || entry.picturable !== false))
     .map((entry) => entry.char);
 
-  const rest = learnedEntries(progress, charMap, picturable).filter((entry) => !guaranteed.includes(entry.char));
+  const rest = learnedEntries(progress, charMap, picturable, today).filter((entry) => !guaranteed.includes(entry.char));
   const filler = weightedSample(rest, progress, today, Math.max(0, rounds - guaranteed.length));
 
   let list = [...guaranteed, ...filler];
@@ -125,7 +128,7 @@ export function charsForGame(gameId, progress, charMap, todaysNewChars, today) {
 // outside the game's own target list.
 function distractorsFor(targetChars, progress, charMap, today) {
   const targetSet = new Set(targetChars);
-  const rest = learnedEntries(progress, charMap, false).filter((entry) => !targetSet.has(entry.char));
+  const rest = learnedEntries(progress, charMap, false, today).filter((entry) => !targetSet.has(entry.char));
   return weightedSample(rest, progress, today, 4);
 }
 
@@ -191,10 +194,31 @@ async function runNewCharacterIntro(container, entry) {
   }
 }
 
+// A character coming back from rest: a warm "还记得这个吗？" with picture +
+// audio + one guided trace before it's tested again.
+async function runReintro(container, entry) {
+  await playLine("restReintro");
+  container.replaceChildren(
+    el(`
+      <div class="session-content">
+        <div class="big-emoji">${charPictureHtml(entry)}</div>
+        <div class="big-character">${entry.char}</div>
+      </div>
+    `)
+  );
+  await playSequence([`char_${entry.char}`, `word_${entry.char}`]);
+
+  container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
+  const target = container.querySelector(".writer-target");
+  await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
+  await new Promise((r) => setTimeout(r, 400));
+}
+
 // ---------- game session ----------
 
 async function runGameSession(container, progress, charMap, todaysNewChars) {
   const today = todayLocalDateString();
+  startReviewSession(progress); // window for auto-shelve miss counting
   const games = buildGameSet(progress);
 
   for (const gameId of games) {
@@ -260,6 +284,20 @@ export async function runCharacterRoom(progress, charMap) {
 
   try {
     await playLine("characterWelcome");
+
+    // 0. Wake any characters whose rest has ended, and gently reintroduce
+    //    them (还记得这个吗？) before they can be tested again.
+    processWakeups(progress, today);
+    saveProgress(progress);
+    const returning = Object.entries(progress.characters)
+      .filter(([, state]) => state.needsReintro)
+      .map(([char]) => charMap.get(char))
+      .filter(Boolean);
+    for (const entry of returning) {
+      await runReintro(container, entry);
+      progress.characters[entry.char].needsReintro = false;
+      saveProgress(progress);
+    }
 
     // 1. Intro any new characters scheduled today but not yet learned.
     const newEntries = pickTodaysNewCharacters(progress, Array.from(charMap.values()), today);
