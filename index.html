@@ -53,12 +53,6 @@
     </div>
   </div>
 
-  <!-- Session overlay: hello -> watering -> new seed -> celebration. Covers
-       the whole screen while a session is running. -->
-  <section id="screen-session" class="screen screen-overlay hidden" aria-label="浇水时间">
-    <div id="session-content" class="session-content"></div>
-  </section>
-
   <!-- Garden tap-to-review overlay (v2.3): tapping any plant opens this —
        flash the character, write it from memory, see the outcome. -->
   <section id="screen-garden-review" class="screen screen-overlay hidden" aria-label="复习">
@@ -88,15 +82,6 @@
        then a session of longer games for review. -->
   <section id="screen-character" class="screen screen-overlay hidden" aria-label="认认字">
     <div id="character-content" class="session-content"></div>
-  </section>
-
-  <!-- Card collection screen (卡片册). -->
-  <section id="screen-cards" class="screen hidden" aria-label="卡片册">
-    <header class="simple-header">
-      <button id="btn-cards-back" class="icon-button" aria-label="返回">⬅️</button>
-      <span class="header-title">卡片册 <span id="card-count-badge"></span></span>
-    </header>
-    <div id="card-grid" class="card-grid"></div>
   </section>
 
   <!-- Parent Corner (家长区) — gated by a math question so she can't wander in. -->

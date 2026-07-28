@@ -426,6 +426,20 @@ button {
   align-items: center;
 }
 
+/* Secondary, low-key access to cards + writing practice from the character
+   room's end screen — deliberately smaller than the main buttons. */
+.character-room-extras {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.character-room-extras .icon-button {
+  font-size: 16px;
+  min-width: auto;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
 /* A2 sentence display: known chars highlighted, unknown get a pinyin ruby. */
 .speaking-sentence {
   font-size: 40px;

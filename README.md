@@ -1,9 +1,35 @@
 # 汉字花园 (Hanzi Garden)
 
-A daily-vocabulary Progressive Web App for a young Mandarin-speaking child who
-can't read yet. One new character a day, spaced-repetition review, a garden
-that grows as she learns. Vanilla HTML/CSS/JS, no build step, no backend —
-everything runs from static files.
+A Progressive Web App that helps a young Mandarin-speaking child who can't read
+yet learn to **speak** more and gradually learn to **write and recognize**
+characters. Vanilla HTML/CSS/JS, no build step, no backend — everything runs
+from static files.
+
+## App structure (v3)
+
+The home screen is the garden (plants grow, panda idles, month streak
+calendar) with **two doors** and a tiny Parent-Corner dot:
+
+- **🗣️ 说说话 (speaking room)** — the primary activity. The panda is her
+  conversation partner; each visit mixes record-and-replay activities:
+  A1 跟我说 (echo words), A2 跟我读句子 (echo sentences), A3 熊猫问你
+  (picture-answer mini-dialogues from `data/dialogues.json`), A4 讲故事
+  (retell a line), A5 大声说 (shout-it energy break). Every recording is kept
+  on-device (IndexedDB) and browsable in 我的声音 (voice gallery). See
+  `js/speaking.js`, `js/recorder.js`, `js/recordings.js`, `js/voiceGallery.js`.
+- **✏️ 认认字 (character room)** — learning + review. Introduces today's new
+  character (picture → audio → stroke animation → guided traces), then a
+  session of 3 longer games drawn from the 8 in `js/games.js` (weighted toward
+  due/shaky/recent, today's new character guaranteed). Cards (卡片册) and
+  writing practice (写字, `js/studio.js`) live here too. See
+  `js/characterRoom.js`.
+
+Tapping a garden plant is still a quick low-stakes review (`js/gardenReview.js`).
+Characters she keeps missing auto-rest for two weeks (`js/rest.js`, 💤 pillow);
+the learning order is editable in Parent Corner.
+
+A note on daily reach: one new character a day with spaced-repetition review
+remains the spine — the two rooms are how she practices it.
 
 ## Running locally
 

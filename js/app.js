@@ -5,7 +5,6 @@ import { loadCharacterMap } from "./data.js";
 import { loadProgress, saveProgress, todayLocalDateString } from "./progress.js";
 import { growthStageFor, isDue } from "./scheduler.js";
 import { unlockAudio } from "./audio.js";
-import { runDailySession } from "./session.js";
 import {
   updatePandaIdleOrSleep,
   renderStreakCalendar,
@@ -17,8 +16,6 @@ import {
   charPictureHtml,
 } from "./garden.js";
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
-import { runPracticeStudio } from "./studio.js";
-import { runGameArcade } from "./arcade.js";
 import { runSpeakingRoom } from "./speaking.js";
 import { runCharacterRoom } from "./characterRoom.js";
 import { runGardenTapReview } from "./gardenReview.js";
@@ -127,37 +124,6 @@ async function handlePlantTap(char) {
   updatePandaIdleOrSleep(progress, charMap);
   if (outcome === "content") {
     gesturePandaTowardThirsty(progress, todayLocalDateString());
-  }
-}
-
-function renderCardGrid() {
-  const grid = document.getElementById("card-grid");
-  grid.innerHTML = "";
-
-  const learned = Object.entries(progress.characters).sort(
-    (a, b) => (b[1].dateLearned > a[1].dateLearned ? 1 : -1) // newest first
-  );
-
-  document.getElementById("card-count-badge").textContent = `(${learned.length})`;
-
-  if (learned.length === 0) {
-    grid.innerHTML = `<p class="empty-state-message">还没有卡片，快去浇水时间种一颗种子吧！</p>`;
-    return;
-  }
-
-  for (const [char, state] of learned) {
-    const entry = charMap.get(char);
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "hanzi-card" + (state.box === 5 ? " golden" : "");
-    card.innerHTML = `
-      <span class="card-char">${char}</span>
-      <span style="font-size:24px">${charPictureHtml(entry)}</span>
-      <span class="card-pinyin">${entry.pinyin}</span>
-      <span class="card-pinyin">${entry.word}</span>
-    `;
-    card.addEventListener("click", () => showCardModal(char, charMap, { withReplay: true }));
-    grid.appendChild(card);
   }
 }
 

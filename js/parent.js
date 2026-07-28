@@ -9,7 +9,6 @@ import {
   importProgressJson,
 } from "./progress.js";
 import { growthStageFor, isDue, pickTodaysNewCharacters, getCharacterOrder } from "./scheduler.js";
-import { getStoryForTriple, warmStoriesCache } from "./stories.js";
 import { restingCharacters, wake } from "./rest.js";
 
 const STAGE_NAMES = ["种子", "发芽", "小苗", "花苞", "开花", "金花"];
@@ -113,11 +112,6 @@ export function renderParentContent(progress, charMap, onChange) {
     </section>
 
     <section class="parent-section">
-      <h3>今日小剧场</h3>
-      <p id="story-coverage-status" class="parent-hint">正在检查…</p>
-    </section>
-
-    <section class="parent-section">
       <h3>备份与恢复</h3>
       <p class="parent-hint">导出的文件可以在另一台设备上导入，作为手动同步的方式。</p>
       <button id="btn-export" class="icon-button parent-action-button" type="button">⬇️ 导出进度</button>
@@ -145,7 +139,6 @@ export function renderParentContent(progress, charMap, onChange) {
   renderReorderList(progress, charMap);
   renderSessionHistory(progress, charMap);
   checkMissingImages(progress, charMap);
-  checkStoryCoverage(progress, charMap);
   wireEvents(progress, charMap, onChange);
 }
 
@@ -318,25 +311,6 @@ function renderSessionHistory(progress, charMap) {
 // taught already has a written story — a parent-facing heads-up, not
 // something the session itself needs (it already skips gracefully on a
 // miss). warmStoriesCache() is a no-op after the first call anywhere.
-async function checkStoryCoverage(progress, charMap) {
-  await warmStoriesCache();
-  const status = document.getElementById("story-coverage-status");
-  if (!status) return;
-
-  const today = todayLocalDateString();
-  const upcoming = pickTodaysNewCharacters(progress, Array.from(charMap.values()), today).map((e) => e.char);
-
-  if (upcoming.length === 0) {
-    status.textContent = "今天没有新字，所以也不会有今日小剧场。";
-    return;
-  }
-
-  const story = getStoryForTriple(upcoming);
-  status.textContent = story
-    ? `今天要学的字（${upcoming.join("")}）已经配好了故事，浇水时间会播放。`
-    : `今天要学的字（${upcoming.join("")}）还没有配对的故事，今天的浇水时间会跳过这一环节 —— 这不影响学习，只是少一个小惊喜。`;
-}
-
 async function checkMissingImages(progress, charMap) {
   const chars = Object.keys(progress.characters);
   const missing = [];

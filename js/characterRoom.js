@@ -25,8 +25,9 @@ import {
 import { isDue, pickTodaysNewCharacters } from "./scheduler.js";
 import { isResting, processWakeups } from "./rest.js";
 import { animateCharacterOnce, runTraceHintQuiz } from "./strokes.js";
-import { charPictureHtml } from "./garden.js";
+import { charPictureHtml, showCardModal } from "./garden.js";
 import { runGame } from "./games.js";
+import { runPracticeStudio } from "./studio.js";
 
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
@@ -252,7 +253,44 @@ async function showMessage(container, emoji, text) {
   });
 }
 
-// Returns "again" to play another set, or "done" to leave.
+// Card collection (卡片册), now reached from inside the character room. Same
+// cards as the old standalone screen — character, picture, pinyin, word —
+// tap to hear it and replay the stroke order. Renders into the room's own
+// container and resolves when she taps back.
+async function showCardCollection(container, progress, charMap) {
+  const learned = Object.entries(progress.characters).sort((a, b) =>
+    b[1].dateLearned > a[1].dateLearned ? 1 : -1
+  );
+  const screen = el(`
+    <div class="session-content">
+      <div class="studio-header-row">
+        <button type="button" class="icon-button" id="btn-cards-room-back" aria-label="返回">⬅️</button>
+        <span class="header-title">卡片册 (${learned.length})</span>
+      </div>
+      <div class="card-grid" id="room-card-grid"></div>
+    </div>
+  `);
+  container.replaceChildren(screen);
+  const grid = screen.querySelector("#room-card-grid");
+  for (const [char, state] of learned) {
+    const entry = charMap.get(char);
+    const card = el(`
+      <button type="button" class="hanzi-card${state.box === 5 ? " golden" : ""}">
+        <span class="card-char">${char}</span>
+        <span style="font-size:24px">${charPictureHtml(entry)}</span>
+        <span class="card-pinyin">${entry.pinyin}</span>
+        <span class="card-pinyin">${entry.word}</span>
+      </button>
+    `);
+    card.addEventListener("click", () => showCardModal(char, charMap, { withReplay: true }));
+    grid.appendChild(card);
+  }
+  await new Promise((resolve) => {
+    screen.querySelector("#btn-cards-room-back").addEventListener("click", resolve, { once: true });
+  });
+}
+
+// Returns "again" / "done" / "cards" / "practice".
 async function showSessionEnd(container) {
   container.replaceChildren(
     el(`
@@ -262,6 +300,10 @@ async function showSessionEnd(container) {
         <div class="speaking-end-buttons">
           <button type="button" class="big-button" id="btn-character-again">再玩一轮</button>
           <button type="button" class="big-button" id="btn-character-done">回到花园</button>
+          <div class="character-room-extras">
+            <button type="button" class="icon-button" id="btn-character-cards">📖 卡片册</button>
+            <button type="button" class="icon-button" id="btn-character-practice">✏️ 写字</button>
+          </div>
         </div>
       </div>
     `)
@@ -270,6 +312,8 @@ async function showSessionEnd(container) {
   return new Promise((resolve) => {
     document.getElementById("btn-character-again").addEventListener("click", () => resolve("again"), { once: true });
     document.getElementById("btn-character-done").addEventListener("click", () => resolve("done"), { once: true });
+    document.getElementById("btn-character-cards").addEventListener("click", () => resolve("cards"), { once: true });
+    document.getElementById("btn-character-practice").addEventListener("click", () => resolve("practice"), { once: true });
   });
 }
 
@@ -317,11 +361,25 @@ export async function runCharacterRoom(progress, charMap) {
       .filter(([, state]) => state.source === "daily" && state.dateLearned === today)
       .map(([char]) => char);
 
-    // 2/3. Game session(s) — replay until she chooses to leave.
-    let action = "again";
-    while (action === "again") {
+    // 2/3. Game session(s). After each set she can play another, dip into
+    //      the card collection or writing practice, or leave.
+    let done = false;
+    while (!done) {
       await runGameSession(container, progress, charMap, todaysNewChars);
-      action = await showSessionEnd(container);
+      let choosing = true;
+      while (choosing) {
+        const action = await showSessionEnd(container);
+        if (action === "again") {
+          choosing = false;
+        } else if (action === "done") {
+          choosing = false;
+          done = true;
+        } else if (action === "cards") {
+          await showCardCollection(container, progress, charMap);
+        } else if (action === "practice") {
+          await runPracticeStudio(progress, charMap);
+        }
+      }
     }
   } finally {
     exit();
