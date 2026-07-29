@@ -32,12 +32,26 @@ import { runPracticeStudio } from "./studio.js";
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
 // 3 pairs regardless. G3 (bubble) runs one timed round per character.
-const GAME_ROUNDS = { G1: 9, G2: 4, G3: 8, G4: 7, G5: 7, G6: 6, G7: 4, G8: 8 };
+const GAME_ROUNDS = { G1: 9, G3: 8, G4: 7, G5: 7, G6: 6, G7: 4, G8: 8 };
 
 // These games render a character's picture, so they can only use characters
 // that have one (particles like 的/了 don't). G4 is now dictation (no
 // pictures), so it's deliberately NOT here — it works great for particles.
 const PICTURE_DEPENDENT_GAMES = new Set(["G8"]);
+
+// Curated list: only characters whose picture/emoji unambiguously represents
+// the character's meaning. G8 (feed the panda) draws from this pool so the
+// "hear word → pick picture" mechanic makes sense. Abstract concepts,
+// pronouns, particles, numbers, and adjectives are excluded.
+const PICTURE_GAME_CHARS = new Set([
+  "猫","狗","鸟","鱼","兔","马","牛","羊","猪","鸡","熊","虎","狮","象","猴",
+  "雨","山","树","花","草","云","雪","月","星","阳","海","河","石",
+  "眼","耳","口","鼻","手","脚","腿","牙",
+  "饭","水","蛋","面","包","糖","苹","蕉","瓜","菜","果","肉",
+  "球","书","笔","门","窗","床","桌","椅","碗","筷","杯",
+  "红","黄","蓝","绿","白","黑",
+  "家",
+]);
 
 function el(html) {
   const template = document.createElement("template");
@@ -93,7 +107,7 @@ function learnedEntries(progress, charMap, picturableOnly, today) {
     .filter((char) => !isResting(progress.characters[char], today)) // resting chars are out of the review pool
     .map((char) => charMap.get(char))
     .filter(Boolean)
-    .filter((entry) => !picturableOnly || entry.picturable !== false);
+    .filter((entry) => !picturableOnly || PICTURE_GAME_CHARS.has(entry.char));
 }
 
 // Builds the character list for one game: today's new character(s) first
@@ -104,7 +118,7 @@ export function charsForGame(gameId, progress, charMap, todaysNewChars, today) {
 
   const guaranteed = todaysNewChars
     .map((char) => charMap.get(char))
-    .filter((entry) => entry && (!picturable || entry.picturable !== false))
+    .filter((entry) => entry && (!picturable || PICTURE_GAME_CHARS.has(entry.char)))
     .map((entry) => entry.char);
 
   const rest = learnedEntries(progress, charMap, picturable, today).filter((entry) => !guaranteed.includes(entry.char));
@@ -148,19 +162,9 @@ export function buildGameSet(progress) {
   const fastPool = ["G3", "G8"].filter(notLast);
   const fast = pick(fastPool.length ? fastPool : ["G3", "G8"]);
 
-  // G2 你来说 (speaking game) is woven in every other visit, so speaking
-  // practice keeps showing up in the character room too.
-  const visitCount = progress.characterRoom?.visitCount || 0;
-  const forceSpeaking = visitCount % 2 === 0 && writing !== "G2" && fast !== "G2";
-
-  let third;
-  if (forceSpeaking) {
-    third = "G2";
-  } else {
-    const restCandidates = ["G2", "G5", "G6", "G7"].filter((g) => g !== writing && g !== fast);
-    const restPool = restCandidates.filter(notLast);
-    third = pick(restPool.length ? restPool : restCandidates);
-  }
+  const restCandidates = ["G5", "G6", "G7"].filter((g) => g !== writing && g !== fast);
+  const restPool = restCandidates.filter(notLast);
+  const third = pick(restPool.length ? restPool : restCandidates);
 
   return shuffle([writing, fast, third]);
 }
@@ -291,7 +295,7 @@ async function showCardCollection(container, progress, charMap) {
 }
 
 // Returns "again" / "done" / "cards" / "practice".
-async function showSessionEnd(container) {
+async function showSessionEnd(container, playAudio) {
   container.replaceChildren(
     el(`
       <div class="session-content">
@@ -308,7 +312,7 @@ async function showSessionEnd(container) {
       </div>
     `)
   );
-  await playLine(pickVariant("sessionComplete", 3));
+  if (playAudio) await playLine(pickVariant("sessionComplete", 3));
   return new Promise((resolve) => {
     document.getElementById("btn-character-again").addEventListener("click", () => resolve("again"), { once: true });
     document.getElementById("btn-character-done").addEventListener("click", () => resolve("done"), { once: true });
@@ -367,8 +371,10 @@ export async function runCharacterRoom(progress, charMap) {
     while (!done) {
       await runGameSession(container, progress, charMap, todaysNewChars);
       let choosing = true;
+      let firstEnd = true;
       while (choosing) {
-        const action = await showSessionEnd(container);
+        const action = await showSessionEnd(container, firstEnd);
+        firstEnd = false;
         if (action === "again") {
           choosing = false;
         } else if (action === "done") {

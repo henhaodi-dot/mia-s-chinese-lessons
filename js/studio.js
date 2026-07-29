@@ -42,13 +42,15 @@ function orderedPracticeChars(progress, charMap, todayStr) {
   return [...todaysNew, ...rest];
 }
 
-export async function runPracticeStudio(progress, charMap) {
+export function runPracticeStudio(progress, charMap) {
   const screen = document.getElementById("screen-studio");
   const container = document.getElementById("studio-content");
   screen.classList.remove("hidden");
 
+  return new Promise((resolveStudio) => {
   function exitStudio() {
     screen.classList.add("hidden");
+    resolveStudio();
   }
 
   function renderInkBottle(target) {
@@ -223,4 +225,5 @@ export async function runPracticeStudio(progress, charMap) {
 
   showPicker();
   playLine("studioWelcome"); // fire-and-forget — only on this first open, not every return-to-picker
+  }); // end of Promise — resolves when exitStudio() is called
 }

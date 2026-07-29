@@ -102,6 +102,10 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
+#screen-studio {
+  z-index: 110;
+}
+
 /* ---------- Garden header ---------- */
 
 .garden-header {
@@ -700,7 +704,12 @@ button {
 /* ---------- Session screen ---------- */
 
 .session-content {
-  flex: 1;
+  /* flex-basis:auto (not 0) so the element grows to fill the viewport when
+     content is short (centering works) but takes its natural content height
+     when content is tall — the overlay can then scroll it. With flex:1 (i.e.
+     flex:1 1 0) the element was clamped to the viewport height and tall
+     content overflowed without a scrollbar. */
+  flex: 1 0 auto;
   /* Full width is load-bearing, not cosmetic: games wrap their own content
      in a .session-content, which lands INSIDE the container (itself a
      .session-content with align-items:center). Without an explicit width
@@ -1209,6 +1218,7 @@ button {
 }
 
 .card-grid {
+  align-self: stretch;
   flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
