@@ -20,16 +20,16 @@
     "pinyin": "Zǎo ya, zhǔnbèi hǎo jiāoshuǐ le ma?"
   },
   "tryAgain_1": {
-    "text": "再试一次，你可以的！",
-    "pinyin": "Zài shì yí cì, nǐ kěyǐ de!"
+    "text": "差一点点，再试一次！",
+    "pinyin": "Chà yìdiǎndiǎn, zài shì yí cì!"
   },
   "tryAgain_2": {
-    "text": "没关系，再来一次吧！",
-    "pinyin": "Méi guānxi, zài lái yí cì ba!"
+    "text": "快了快了，你快找到了！",
+    "pinyin": "Kuài le kuài le, nǐ kuài zhǎodào le!"
   },
   "tryAgain_3": {
-    "text": "慢慢想，再试一次！",
-    "pinyin": "Mànmàn xiǎng, zài shì yí cì!"
+    "text": "动动脑筋，再来！",
+    "pinyin": "Dòngdong nǎojīn, zài lái!"
   },
   "praise_1": {
     "text": "太棒了！",
@@ -208,8 +208,8 @@
     "pinyin": "Wǎnshang lái le yì zhī xiǎo yínghuǒchóng!"
   },
   "gardenStruggleLine": {
-    "text": "明天再来看看它吧！",
-    "pinyin": "Míngtiān zài lái kànkan tā ba!"
+    "text": "每次练都在进步，继续加油！",
+    "pinyin": "Měi cì liàn dōu zài jìnbù, jìxù jiāyóu!"
   },
   "studioWelcome": {
     "text": "欢迎来到写字小屋，想练哪个字呀？",
