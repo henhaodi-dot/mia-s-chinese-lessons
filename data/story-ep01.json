@@ -1,0 +1,118 @@
+{
+  "id": "ep01-park",
+  "title": "去公园！",
+  "titleEmoji": "🏞️",
+  "assetBase": "assets/story/ep01",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "出发",
+      "image": "scene-01.webp",
+      "narration": "narration-01.m4a",
+      "narrationText": "今天天气很好！米亚和妈妈带妹妹去公园。",
+      "phrase": "phrase-01.m4a",
+      "phraseText": "妈妈，我们去公园吧！",
+      "hotspots": [
+        { "label": "门", "text": "门", "audio": "hotspot-men.m4a", "x": 75, "y": 5, "w": 22, "h": 72 },
+        { "label": "婴儿车", "text": "婴儿车", "audio": "hotspot-yingerche.m4a", "x": 20, "y": 30, "w": 30, "h": 55 },
+        { "label": "太阳", "text": "今天有太阳！", "audio": "hotspot-taiyang.m4a", "x": 5, "y": 2, "w": 35, "h": 22 }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "荡秋千",
+      "image": "scene-02.webp",
+      "narration": "narration-02.m4a",
+      "narrationText": "妈妈推米亚荡秋千。“高一点！再高一点！”米亚大声说。",
+      "phrase": "phrase-02.m4a",
+      "phraseText": "妈妈，再高一点！",
+      "hotspots": [
+        { "label": "秋千", "text": "秋千", "audio": "hotspot-qiuqian.m4a", "x": 32, "y": 22, "w": 38, "h": 48 },
+        { "label": "天空", "text": "天空好蓝", "audio": "hotspot-tiankong.m4a", "x": 25, "y": 0, "w": 50, "h": 16 },
+        { "label": "妈妈的手", "text": "妈妈推我", "audio": "hotspot-mama-tui.m4a", "x": 10, "y": 30, "w": 24, "h": 28 }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "妹妹也要玩",
+      "image": "scene-03.webp",
+      "narration": "narration-03.m4a",
+      "narrationText": "妹妹坐在小宝宝的秋千里，开心地笑了。",
+      "phrase": "phrase-03.m4a",
+      "phraseText": "妹妹也喜欢荡秋千！",
+      "hotspots": [
+        { "label": "宝宝秋千", "text": "宝宝秋千", "audio": "hotspot-baobao-qiuqian.m4a", "x": 58, "y": 28, "w": 30, "h": 52 },
+        { "label": "妹妹", "text": "妹妹笑了", "audio": "hotspot-meimei-xiao.m4a", "x": 62, "y": 25, "w": 22, "h": 30 }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "鞋子飞了",
+      "image": "scene-04.webp",
+      "narration": "narration-04.m4a",
+      "narrationText": "妈妈推妹妹荡秋千。妹妹使劲踢腿——啪！鞋子飞出去了！鞋子飞啊飞……砰！掉在妈妈头上！“哎呀！！”妈妈一脸懵。米亚笑得肚子都疼了。",
+      "phrase": "phrase-04.m4a",
+      "phraseText": "妹妹的鞋子飞了！哈哈哈！",
+      "hotspots": [
+        { "label": "鞋子", "text": "鞋子飞了！", "audio": "hotspot-xiezi-fei.m4a", "x": 30, "y": 0, "w": 18, "h": 20 },
+        { "label": "妈妈的头", "text": "妈妈的头！", "audio": "hotspot-mama-tou.m4a", "x": 28, "y": 15, "w": 22, "h": 28 },
+        { "label": "妹妹的脚", "text": "光脚丫", "audio": "hotspot-guang-jiaoya.m4a", "x": 55, "y": 55, "w": 25, "h": 22 }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "滑滑梯",
+      "image": "scene-05.webp",
+      "narration": "narration-05.m4a",
+      "narrationText": "妹妹自己爬楼梯，妈妈在后面扶着她。米亚在上面等妹妹。",
+      "phrase": "phrase-05.m4a",
+      "phraseText": "妹妹，加油！慢慢爬！",
+      "hotspots": [
+        { "label": "楼梯", "text": "楼梯", "audio": "hotspot-louti.m4a", "x": 35, "y": 32, "w": 28, "h": 58 },
+        { "label": "滑滑梯", "text": "滑滑梯", "audio": "hotspot-huahuati.m4a", "x": 70, "y": 18, "w": 25, "h": 58 }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "猴子架",
+      "image": "scene-06.webp",
+      "narration": "narration-06.m4a",
+      "narrationText": "米亚最喜欢猴子架！她抓着一个一个地过去。“妈妈你看！”",
+      "phrase": "phrase-06.m4a",
+      "phraseText": "妈妈，你看我厉害不？",
+      "hotspots": [
+        { "label": "猴子架", "text": "猴子架", "audio": "hotspot-houzijia.m4a", "x": 12, "y": 0, "w": 70, "h": 28 },
+        { "label": "米亚的手", "text": "抓紧了！", "audio": "hotspot-zhuajin.m4a", "x": 42, "y": 12, "w": 20, "h": 25 }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "喝水",
+      "image": "scene-07.webp",
+      "narration": "narration-07.m4a",
+      "narrationText": "玩累了，大家休息一下。妈妈给米亚和妹妹喝水。",
+      "phrase": "phrase-07.m4a",
+      "phraseText": "我好渴，我要喝水。",
+      "hotspots": [
+        { "label": "长椅", "text": "长椅", "audio": "hotspot-changyi.m4a", "x": 5, "y": 30, "w": 50, "h": 42 },
+        { "label": "水杯", "text": "水杯", "audio": "hotspot-shuibei.m4a", "x": 28, "y": 30, "w": 20, "h": 24 },
+        { "label": "大树", "text": "大树", "audio": "hotspot-dashu.m4a", "x": 55, "y": 0, "w": 35, "h": 55 }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "做柠檬水",
+      "image": "scene-08.webp",
+      "narration": "narration-08.m4a",
+      "narrationText": "回到家，米亚和妈妈一起做柠檬水。米亚最喜欢这个部分！",
+      "phrase": "phrase-08.m4a",
+      "phraseText": "我来挤柠檬！",
+      "hotspots": [
+        { "label": "柠檬", "text": "柠檬", "audio": "hotspot-ningmeng.m4a", "x": 2, "y": 50, "w": 24, "h": 28 },
+        { "label": "杯子", "text": "杯子", "audio": "hotspot-beizi.m4a", "x": 22, "y": 42, "w": 22, "h": 30 },
+        { "label": "小凳子", "text": "小凳子", "audio": "hotspot-xiaodengzi.m4a", "x": 36, "y": 68, "w": 18, "h": 28 }
+      ]
+    }
+  ],
+  "characters": ["大", "上", "水", "天", "好"]
+}

@@ -18,6 +18,7 @@ import {
 import { generateGateQuestion, checkGateAnswer, renderParentContent } from "./parent.js";
 import { runSpeakingRoom } from "./speaking.js";
 import { runCharacterRoom } from "./characterRoom.js";
+import { runStoryMode } from "./storyMode.js";
 import { runGardenTapReview } from "./gardenReview.js";
 import { checkForUpdate } from "./updateCheck.js";
 import { getHeartsToday, HEART_DAILY_CAP } from "./reviewRules.js";
@@ -176,6 +177,11 @@ async function main() {
     renderGardenGrid();
     renderStreakCalendar(progress);
     updatePandaIdleOrSleep(progress, charMap);
+  });
+
+  document.getElementById("btn-story").addEventListener("click", async () => {
+    await unlockAudio();
+    await runStoryMode(progress, charMap);
   });
 
   document.getElementById("btn-parent").addEventListener("click", () => {
