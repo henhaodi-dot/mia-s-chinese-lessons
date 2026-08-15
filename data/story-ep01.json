@@ -42,7 +42,8 @@
       "phraseText": "妹妹也喜欢荡秋千！",
       "hotspots": [
         { "label": "宝宝秋千", "text": "宝宝秋千", "audio": "hotspot-baobao-qiuqian.m4a", "x": 58, "y": 28, "w": 30, "h": 52 },
-        { "label": "妹妹", "text": "妹妹笑了", "audio": "hotspot-meimei-xiao.m4a", "x": 62, "y": 25, "w": 22, "h": 30 }
+        { "label": "妹妹", "text": "妹妹笑了", "audio": "hotspot-meimei-xiao.m4a", "x": 62, "y": 25, "w": 22, "h": 30 },
+        { "label": "白云", "text": "白云", "audio": "hotspot-baiyun.mp3", "x": 25, "y": 0, "w": 50, "h": 18 }
       ]
     },
     {
@@ -69,7 +70,8 @@
       "phraseText": "妹妹，加油！慢慢爬！",
       "hotspots": [
         { "label": "楼梯", "text": "楼梯", "audio": "hotspot-louti.m4a", "x": 35, "y": 32, "w": 28, "h": 58 },
-        { "label": "滑滑梯", "text": "滑滑梯", "audio": "hotspot-huahuati.m4a", "x": 70, "y": 18, "w": 25, "h": 58 }
+        { "label": "滑滑梯", "text": "滑滑梯", "audio": "hotspot-huahuati.m4a", "x": 70, "y": 18, "w": 25, "h": 58 },
+        { "label": "妈妈扶", "text": "妈妈扶着妹妹", "audio": "hotspot-mama-fu.mp3", "x": 5, "y": 28, "w": 32, "h": 48 }
       ]
     },
     {
