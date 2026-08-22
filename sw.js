@@ -17,7 +17,7 @@
 // tablet/phone that already installed the app can keep serving stale files
 // far longer than expected. See README.md.
 // ============================================================
-const CACHE_VERSION = "v35";
+const CACHE_VERSION = "v36";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's
@@ -58,6 +58,7 @@ const SHELL_FILES = [
   "./data/stories.json",
   "./data/dialogues.json",
   "./data/story-ep01.json",
+  "./data/story-ep02.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
 ];
@@ -114,19 +115,21 @@ async function cacheAllCharacterAssets(cache) {
   }
 
   // Story mode episode assets (images + audio).
-  try {
-    const storyRes = await fetch("./data/story-ep01.json");
-    if (storyRes.ok) {
-      const ep = await storyRes.json();
-      const base = `./${ep.assetBase}`;
-      for (const scene of ep.scenes) {
-        urls.push(`${base}/${scene.image}`);
-        urls.push(`${base}/${scene.narration}`);
-        urls.push(`${base}/${scene.phrase}`);
-        for (const h of scene.hotspots) urls.push(`${base}/${h.audio}`);
+  for (const epFile of ["./data/story-ep01.json", "./data/story-ep02.json"]) {
+    try {
+      const storyRes = await fetch(epFile);
+      if (storyRes.ok) {
+        const ep = await storyRes.json();
+        const base = `./${ep.assetBase}`;
+        for (const scene of ep.scenes) {
+          urls.push(`${base}/${scene.image}`);
+          urls.push(`${base}/${scene.narration}`);
+          urls.push(`${base}/${scene.phrase}`);
+          for (const h of scene.hotspots) urls.push(`${base}/${h.audio}`);
+        }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
   // Firing all ~1200 requests at once (Promise.all over the whole list)
   // overwhelms the connection pool and effectively stalls — process in

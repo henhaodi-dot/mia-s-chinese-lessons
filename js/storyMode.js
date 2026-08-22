@@ -7,7 +7,7 @@
 import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
 import { loadProgress, saveProgress } from "./progress.js";
 
-const ASSET_BASE = "assets/story/ep01";
+let currentAssetBase = "";
 
 let storyAudio = null;
 function getStoryAudio() {
@@ -19,7 +19,7 @@ function playStoryAudio(file) {
   return new Promise((resolve) => {
     const audio = getStoryAudio();
     audio.pause();
-    audio.src = `${ASSET_BASE}/${file}`;
+    audio.src = `${currentAssetBase}/${file}`;
     audio.onended = resolve;
     audio.onerror = resolve;
     audio.play().catch(resolve);
@@ -59,9 +59,11 @@ export async function runStoryMode(progress, charMap) {
 }
 
 async function loadEpisodes() {
-  const res = await fetch("data/story-ep01.json");
-  const ep = await res.json();
-  return [ep];
+  const files = ["data/story-ep01.json", "data/story-ep02.json"];
+  const results = await Promise.all(
+    files.map((f) => fetch(f).then((r) => r.json()).catch(() => null))
+  );
+  return results.filter(Boolean);
 }
 
 function renderEpisodePicker(container, episodes, progress, charMap, onExit) {
@@ -97,6 +99,7 @@ function renderEpisodePicker(container, episodes, progress, charMap, onExit) {
 // ── Episode view with layer tabs ───────────────────────────────
 
 function renderEpisodeView(container, episode, progress, charMap, onBack) {
+  currentAssetBase = episode.assetBase;
   const view = el(`
     <div class="session-content story-episode">
       <div class="story-episode-header">
@@ -150,7 +153,7 @@ function renderListenLayer(container, episode) {
     const view = el(`
       <div class="story-listen">
         <div class="story-scene-image-wrap">
-          <img class="story-scene-image" src="${ASSET_BASE}/${scene.image}" alt="${scene.title}" />
+          <img class="story-scene-image" src="${currentAssetBase}/${scene.image}" alt="${scene.title}" />
           <div class="story-scene-title-badge">${scene.title}</div>
         </div>
         <p class="story-narration-text">${scene.narrationText}</p>
@@ -207,7 +210,7 @@ function renderTapLayer(container, episode) {
     const view = el(`
       <div class="story-tap">
         <div class="story-scene-image-wrap story-hotspot-wrap">
-          <img class="story-scene-image" src="${ASSET_BASE}/${scene.image}" alt="${scene.title}" />
+          <img class="story-scene-image" src="${currentAssetBase}/${scene.image}" alt="${scene.title}" />
           ${scene.hotspots.map((h, i) => `
             <button type="button" class="story-hotspot" data-idx="${i}"
               style="left:${h.x}%;top:${h.y}%;width:${h.w}%;height:${h.h}%"
@@ -277,7 +280,7 @@ function renderSpeakLayer(container, episode, progress) {
     const view = el(`
       <div class="story-speak">
         <div class="story-scene-image-wrap story-speak-image-wrap">
-          <img class="story-scene-image" src="${ASSET_BASE}/${scene.image}" alt="${scene.title}" />
+          <img class="story-scene-image" src="${currentAssetBase}/${scene.image}" alt="${scene.title}" />
         </div>
         <p class="story-phrase-text">${scene.phraseText}</p>
         <div class="story-speak-buttons">

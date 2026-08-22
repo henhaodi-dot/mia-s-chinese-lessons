@@ -1,0 +1,90 @@
+{
+  "id": "ep02-walk",
+  "title": "去散步！",
+  "titleEmoji": "🛴",
+  "assetBase": "assets/story/ep02",
+  "scenes": [
+    {
+      "id": 1,
+      "title": "出发",
+      "image": "scene-01.webp",
+      "narration": "narration-01.m4a",
+      "narrationText": "米亚说：“妈妈，我们去散步吧！”米亚骑上她的滑板车，妈妈推着婴儿车，出发啦！",
+      "phrase": "phrase-01.m4a",
+      "phraseText": "妈妈，我们去散步吧！我要骑滑板车！",
+      "hotspots": [
+        { "label": "滑板车", "text": "滑板车", "audio": "hotspot-huabanche.m4a", "x": 15, "y": 45, "w": 28, "h": 45 },
+        { "label": "婴儿车", "text": "婴儿车", "audio": "hotspot-yingerche.m4a", "x": 45, "y": 35, "w": 25, "h": 50 },
+        { "label": "出发啦", "text": "出发啦", "audio": "hotspot-chufala.m4a", "x": 30, "y": 78, "w": 40, "h": 18 }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "等等我",
+      "image": "scene-02.webp",
+      "narration": "narration-02.m4a",
+      "narrationText": "妈妈推着婴儿车走得好快！“妈妈等等我！你好快！”妈妈说：“你可以追上来的！”",
+      "phrase": "phrase-02.m4a",
+      "phraseText": "妈妈等等我！你好快！",
+      "hotspots": [
+        { "label": "妈妈", "text": "好快", "audio": "hotspot-haokuai.m4a", "x": 38, "y": 8, "w": 28, "h": 55 },
+        { "label": "米亚", "text": "追上来", "audio": "hotspot-zhuishanglai.m4a", "x": 5, "y": 15, "w": 30, "h": 60 }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "好好玩",
+      "image": "scene-03.webp",
+      "narration": "narration-03.m4a",
+      "narrationText": "妈妈推婴儿车，妹妹坐在里面。米亚骑着滑板车跟在旁边。“妈妈，好好玩！”",
+      "phrase": "phrase-03.m4a",
+      "phraseText": "妈妈，好好玩！太开心了！",
+      "hotspots": [
+        { "label": "米亚", "text": "好好玩", "audio": "hotspot-haohaowanr.m4a", "x": 5, "y": 10, "w": 35, "h": 65 },
+        { "label": "妹妹", "text": "开心", "audio": "hotspot-kaixin.m4a", "x": 42, "y": 30, "w": 28, "h": 42 }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "有车来了",
+      "image": "scene-04.webp",
+      "narration": "narration-04.m4a",
+      "narrationText": "“妈妈，有车来了！”米亚大声喊。妈妈说：“好，我们停一下。”她们站在路边，等车开过去。",
+      "phrase": "phrase-04.m4a",
+      "phraseText": "妈妈，有车来了！小心！",
+      "hotspots": [
+        { "label": "路边", "text": "路边", "audio": "hotspot-lubian.m4a", "x": 0, "y": 75, "w": 100, "h": 22 },
+        { "label": "车", "text": "有车来了", "audio": "hotspot-youchelaile.m4a", "x": 0, "y": 5, "w": 32, "h": 40 },
+        { "label": "妈妈的手", "text": "小心", "audio": "hotspot-xiaoxin.m4a", "x": 45, "y": 15, "w": 20, "h": 30 }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "回家吃西瓜",
+      "image": "scene-05.webp",
+      "narration": "narration-05.m4a",
+      "narrationText": "“走吧妈妈！回家吃西瓜！”米亚开心地说。她们走上楼梯，妈妈抱着妹妹进了家门。",
+      "phrase": "phrase-05.m4a",
+      "phraseText": "走吧妈妈！回家吃西瓜！",
+      "hotspots": [
+        { "label": "楼梯", "text": "楼梯", "audio": "hotspot-louti.m4a", "x": 25, "y": 35, "w": 40, "h": 55 },
+        { "label": "家门", "text": "回家", "audio": "hotspot-huijia.m4a", "x": 55, "y": 0, "w": 35, "h": 30 }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "好甜的西瓜",
+      "image": "scene-06.webp",
+      "narration": "narration-06.m4a",
+      "narrationText": "“嗯，西瓜好甜！”米亚吃得好开心。妹妹伸出小手，也想要。“你也要吗？”妈妈把一块西瓜递给了妹妹。",
+      "phrase": "phrase-06.m4a",
+      "phraseText": "嗯，西瓜好甜！妹妹也要！",
+      "hotspots": [
+        { "label": "西瓜", "text": "西瓜", "audio": "hotspot-xigua.m4a", "x": 22, "y": 60, "w": 35, "h": 28 },
+        { "label": "妹妹的手", "text": "妹妹也要", "audio": "hotspot-meimei-yeyao.m4a", "x": 60, "y": 30, "w": 30, "h": 35 },
+        { "label": "米亚的脸", "text": "好甜", "audio": "hotspot-haotian.m4a", "x": 5, "y": 15, "w": 28, "h": 35 }
+      ]
+    }
+  ],
+  "characters": ["大", "车", "走"]
+}
