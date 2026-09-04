@@ -102,11 +102,26 @@ function migrate(progress) {
   // no restUntil as active, recentMisses||[], characterOrder falls back to
   // rank order), so existing data needs no touch-up.
 
+  // Backfill streakCalendar for all days from startDate to today.
+  if (!progress.streakCalendar) progress.streakCalendar = {};
+  const start = progress.settings?.startDate;
+  if (start && Object.keys(progress.streakCalendar).length === 0) {
+    const today = todayLocalDateString();
+    let d = new Date(start + "T00:00:00");
+    const end = new Date(today + "T00:00:00");
+    while (d <= end) {
+      const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      progress.streakCalendar[ds] = true;
+      d.setDate(d.getDate() + 1);
+    }
+  }
+
   progress.schemaVersion = SCHEMA_VERSION;
   return progress;
 }
 
 export function saveProgress(progress) {
+  progress.streakCalendar[todayLocalDateString()] = true;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 }
 
