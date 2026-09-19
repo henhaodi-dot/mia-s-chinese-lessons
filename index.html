@@ -13,11 +13,11 @@
 <body>
 
   <!-- Garden screen: this is the home screen. Radically simplified in v3 —
-       just the garden background, the streak calendar, and TWO big doors
-       (说说话 speaking room, 认认字 character room). Everything else that
-       used to live in the header (cards, studio, arcade, the daily-session
-       button) has moved inside those two rooms. Only a tiny corner dot is
-       left for the parent. -->
+       just the garden background, the streak calendar, and the room doors
+       (说说话 speaking room, 认认字 character room, 故事 story mode).
+       Everything else that used to live in the header (cards, studio, the
+       daily-session button) has moved inside those rooms. Only a tiny corner
+       dot is left for the parent. -->
   <section id="screen-garden" class="screen" aria-label="花园">
     <header class="garden-header garden-header-v3">
       <div id="panda-corner" class="panda-corner" aria-hidden="true">
@@ -57,39 +57,43 @@
     </div>
   </div>
 
+  <!-- Every room below carries a persistent 🏠 button (outside the room's
+       content container, so it survives each activity re-rendering). It does
+       exactly what the tablet's back button does — see app.js. Before this,
+       the only way out mid-activity was the OS back button, which a
+       standalone install on some devices doesn't have. -->
+
   <!-- Garden tap-to-review overlay (v2.3): tapping any plant opens this —
        flash the character, write it from memory, see the outcome. -->
   <section id="screen-garden-review" class="screen screen-overlay hidden" aria-label="复习">
+    <button type="button" class="room-exit" data-exit="history" aria-label="回到花园" title="回到花园">🏠</button>
     <div id="garden-review-content" class="session-content"></div>
   </section>
 
   <!-- Practice studio overlay (写字时间, v2.3): zero-stakes 看/描/写 practice,
        separate from the garden's memory-recall review. -->
   <section id="screen-studio" class="screen screen-overlay hidden" aria-label="写字时间">
+    <button type="button" class="room-exit" data-exit="studio" aria-label="返回" title="返回">⬅️</button>
     <div id="studio-content" class="session-content"></div>
-  </section>
-
-  <!-- Standalone game arcade (游戏场): play any of the 8 games anytime,
-       drawing from her whole learned pool instead of just today's new
-       characters. -->
-  <section id="screen-arcade" class="screen screen-overlay hidden" aria-label="游戏场">
-    <div id="arcade-content" class="session-content"></div>
   </section>
 
   <!-- 说说话 (speaking room, v3): the record-and-replay speaking activities.
        The panda models, she echoes, hears herself back. -->
   <section id="screen-speaking" class="screen screen-overlay hidden" aria-label="说说话">
+    <button type="button" class="room-exit" data-exit="history" aria-label="回到花园" title="回到花园">🏠</button>
     <div id="speaking-content" class="session-content"></div>
   </section>
 
   <!-- 认认字 (character room, v3): learn today's new character (if any),
        then a session of longer games for review. -->
   <section id="screen-character" class="screen screen-overlay hidden" aria-label="认认字">
+    <button type="button" class="room-exit" data-exit="history" aria-label="回到花园" title="回到花园">🏠</button>
     <div id="character-content" class="session-content"></div>
   </section>
 
   <!-- 故事 (story mode): illustrated stories with interactive layers. -->
   <section id="screen-story" class="screen screen-overlay hidden" aria-label="故事">
+    <button type="button" class="room-exit" data-exit="history" aria-label="回到花园" title="回到花园">🏠</button>
     <div id="story-content" class="session-content"></div>
   </section>
 

@@ -24,10 +24,11 @@ import {
 } from "./progress.js";
 import { isDue, pickTodaysNewCharacters } from "./scheduler.js";
 import { isResting, processWakeups } from "./rest.js";
-import { animateCharacterOnce, runTraceHintQuiz } from "./strokes.js";
+import { animateCharacterOnce, traceWithHints } from "./strokes.js";
 import { charPictureHtml, showCardModal } from "./garden.js";
 import { runGame } from "./games.js";
 import { runPracticeStudio } from "./studio.js";
+import { enterScreen, leaveScreen, sleep, waitForClick, waitForAnyClick } from "./nav.js";
 
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
@@ -187,15 +188,15 @@ async function runNewCharacterIntro(container, entry) {
   container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
   let target = container.querySelector(".writer-target");
   await animateCharacterOnce(target, entry.char, { speed: 1 });
-  await new Promise((r) => setTimeout(r, 500));
+  await sleep(500);
   await animateCharacterOnce(target, entry.char, { speed: 0.4, withNumbers: true });
-  await new Promise((r) => setTimeout(r, 800));
+  await sleep(800);
 
   for (let i = 0; i < 2; i++) {
     container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
     target = container.querySelector(".writer-target");
-    await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
-    await new Promise((r) => setTimeout(r, 400));
+    await traceWithHints(target, entry.char);
+    await sleep(400);
   }
 }
 
@@ -215,8 +216,8 @@ async function runReintro(container, entry) {
 
   container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
   const target = container.querySelector(".writer-target");
-  await new Promise((resolve) => runTraceHintQuiz(target, entry.char, { onComplete: resolve }));
-  await new Promise((r) => setTimeout(r, 400));
+  await traceWithHints(target, entry.char);
+  await sleep(400);
 }
 
 // ---------- game session ----------
@@ -252,9 +253,7 @@ async function showMessage(container, emoji, text) {
       </div>
     `)
   );
-  await new Promise((resolve) => {
-    document.getElementById("btn-character-done").addEventListener("click", resolve, { once: true });
-  });
+  await waitForClick(container.querySelector("#btn-character-done"));
 }
 
 // Card collection (卡片册), now reached from inside the character room. Same
@@ -262,9 +261,9 @@ async function showMessage(container, emoji, text) {
 // tap to hear it and replay the stroke order. Renders into the room's own
 // container and resolves when she taps back.
 async function showCardCollection(container, progress, charMap) {
-  const learned = Object.entries(progress.characters).sort((a, b) =>
-    b[1].dateLearned > a[1].dateLearned ? 1 : -1
-  );
+  const learned = Object.entries(progress.characters)
+    .filter(([char]) => charMap.has(char)) // a saved char no longer in characters.json has no card to show
+    .sort((a, b) => (b[1].dateLearned > a[1].dateLearned ? 1 : -1));
   const screen = el(`
     <div class="session-content">
       <div class="studio-header-row">
@@ -289,9 +288,7 @@ async function showCardCollection(container, progress, charMap) {
     card.addEventListener("click", () => showCardModal(char, charMap, { withReplay: true }));
     grid.appendChild(card);
   }
-  await new Promise((resolve) => {
-    screen.querySelector("#btn-cards-room-back").addEventListener("click", resolve, { once: true });
-  });
+  await waitForClick(screen.querySelector("#btn-cards-room-back"));
 }
 
 // Returns "again" / "done" / "cards" / "practice".
@@ -313,20 +310,20 @@ async function showSessionEnd(container, playAudio) {
     `)
   );
   if (playAudio) await playLine(pickVariant("sessionComplete", 3));
-  return new Promise((resolve) => {
-    document.getElementById("btn-character-again").addEventListener("click", () => resolve("again"), { once: true });
-    document.getElementById("btn-character-done").addEventListener("click", () => resolve("done"), { once: true });
-    document.getElementById("btn-character-cards").addEventListener("click", () => resolve("cards"), { once: true });
-    document.getElementById("btn-character-practice").addEventListener("click", () => resolve("practice"), { once: true });
-  });
+  return waitForAnyClick([
+    [container.querySelector("#btn-character-again"), "again"],
+    [container.querySelector("#btn-character-done"), "done"],
+    [container.querySelector("#btn-character-cards"), "cards"],
+    [container.querySelector("#btn-character-practice"), "practice"],
+  ]);
 }
 
+// Resolves when she leaves via 回到花园; rejects with RunAborted if she leaves
+// via the back button / 🏠 (app.js swallows that). Either way the screen is
+// hidden and the history entry cleaned up in `finally`.
 export async function runCharacterRoom(progress, charMap) {
-  const screen = document.getElementById("screen-character");
   const container = document.getElementById("character-content");
-  screen.classList.remove("hidden");
-  history.pushState({ hanziGardenScreen: "screen-character" }, "");
-  const exit = () => screen.classList.add("hidden");
+  const run = enterScreen("screen-character");
 
   const today = todayLocalDateString();
 
@@ -388,6 +385,7 @@ export async function runCharacterRoom(progress, charMap) {
       }
     }
   } finally {
-    exit();
+    container.replaceChildren();
+    leaveScreen("screen-character", run);
   }
 }

@@ -31,6 +31,13 @@ the learning order is editable in Parent Corner.
 A note on daily reach: one new character a day with spaced-repetition review
 remains the spine — the two rooms are how she practices it.
 
+**Leaving a room.** Every room has a 🏠 button (top-right) that does exactly
+what the tablet's back button does: the activity in progress is cancelled
+cleanly (audio stops, timers stop, nothing half-finished is scored) and the
+garden comes back. Under the hood each room is one cancellable "run" —
+see the comment at the top of `js/nav.js`, and the one rule it asks of any
+new activity code (await through its helpers, never a bare `setTimeout`).
+
 ## Running locally
 
 Any static file server works. Two options:
@@ -234,8 +241,9 @@ sw.js                 service worker (offline caching)
 version.json           tiny {"v": "..."} file used to detect a new deploy —
                        see "Every deploy needs a three-way version bump"
 css/                  styles.css (app), print.css (print.html only)
-js/                   ES modules — one file per concern (scheduler, quiz,
-                       audio, session, garden, parent, print, etc.)
+js/                   ES modules — one file per concern (scheduler, games,
+                       audio, the rooms, garden, parent, print, etc.);
+                       nav.js is screen navigation + run cancellation
 data/characters.json   the 200-character curriculum
 data/ui_lines.json     every spoken UI line, keyed by a stable id
 assets/strokes/        per-character stroke data (generated)

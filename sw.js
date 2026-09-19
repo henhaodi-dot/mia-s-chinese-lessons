@@ -17,7 +17,7 @@
 // tablet/phone that already installed the app can keep serving stale files
 // far longer than expected. See README.md.
 // ============================================================
-const CACHE_VERSION = "v37";
+const CACHE_VERSION = "v38";
 const CACHE_NAME = `hanzi-garden-${CACHE_VERSION}`;
 
 // The app shell — always needed regardless of which characters she's
@@ -39,7 +39,7 @@ const SHELL_FILES = [
   "./js/updateCheck.js",
   "./js/version.js",
   "./js/studio.js",
-  "./js/arcade.js",
+  "./js/nav.js",
   "./js/speaking.js",
   "./js/recorder.js",
   "./js/recordings.js",
@@ -75,7 +75,7 @@ async function cacheOne(cache, url) {
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
-    if (res.ok) await cache.put(url, res);
+    if (res.status === 200) await cache.put(url, res);
   } catch {
     // Offline install, timed out, or the resource genuinely doesn't exist
     // yet — skip it.
@@ -185,9 +185,12 @@ self.addEventListener("fetch", (event) => {
 
       try {
         const res = await fetch(event.request);
-        if (res.ok) {
+        // Only complete 200 responses are cacheable — a 206 partial (the
+        // browser range-requesting part of an audio file) makes cache.put()
+        // throw, and an opaque/redirect response isn't worth keeping.
+        if (res.status === 200) {
           const cache = await caches.open(CACHE_NAME);
-          cache.put(event.request, res.clone());
+          cache.put(event.request, res.clone()).catch(() => {});
         }
         return res;
       } catch (err) {

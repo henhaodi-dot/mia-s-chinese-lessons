@@ -8,6 +8,7 @@
 import { playLine } from "./audio.js";
 import { playBlob } from "./recorder.js";
 import { getAllRecordings, recordingScore } from "./recordings.js";
+import { waitForClick } from "./nav.js";
 
 // Above this "loud + long enough" score, a clip gets the gold border.
 const GOLD_SCORE = 0.06;
@@ -42,9 +43,18 @@ function tileLabel(rec) {
   return rec.text || rec.char || "🎵";
 }
 
+// Only the most recently tapped tile keeps playing: each tap bumps the
+// sequence number, and an older sequence stops between its steps as soon as
+// it notices it's been superseded (playBlob/playLine already cut the clip
+// that was mid-play).
+let playSeq = 0;
+
 async function playHersModelHers(rec) {
+  const mine = ++playSeq;
   await playBlob(rec.blob);
+  if (mine !== playSeq) return;
   await playLine(rec.modelKey || rec.id);
+  if (mine !== playSeq) return;
   await playBlob(rec.blob);
 }
 
@@ -61,9 +71,7 @@ export async function runVoiceGallery(container) {
         </div>
       `)
     );
-    await new Promise((resolve) => {
-      document.getElementById("btn-gallery-back").addEventListener("click", resolve, { once: true });
-    });
+    await waitForClick(container.querySelector("#btn-gallery-back"));
     return;
   }
 
@@ -86,14 +94,17 @@ export async function runVoiceGallery(container) {
       </button>
     `);
     tile.addEventListener("click", () => {
+      // Starting a new tile cuts whatever was playing (playBlob/playLine are
+      // single-slot), so tapping around never stacks overlapping voices.
+      grid.querySelectorAll(".voice-tile-playing").forEach((t) => t.classList.remove("voice-tile-playing"));
       tile.classList.add("voice-tile-playing");
-      playHersModelHers(rec).finally(() => tile.classList.remove("voice-tile-playing"));
+      playHersModelHers(rec)
+        .catch(() => {})
+        .finally(() => tile.classList.remove("voice-tile-playing"));
     });
     grid.appendChild(tile);
   }
   container.replaceChildren(screen);
 
-  await new Promise((resolve) => {
-    document.getElementById("btn-gallery-back").addEventListener("click", resolve, { once: true });
-  });
+  await waitForClick(screen.querySelector("#btn-gallery-back"));
 }

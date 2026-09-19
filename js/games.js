@@ -1,13 +1,17 @@
-// Round 3 game arcade (游戏场): 8 mini-games, a deterministic daily
-// rotation that picks 3 of them, and a curated visual-confusable map for
+// The character room's 8 mini-games and a curated visual-confusable map for
 // G5. Every game function has the signature
 //   runGame(container, { newChars, distractorChars, charMap, progress }) -> Promise<void>
 // and is responsible for rendering itself into `container`, playing its
 // own instruction audio, and resolving once the child has finished it.
+//
+// Every wait in here (a tap, a pause, a timed round) goes through nav.js so
+// leaving the room mid-game unwinds the game instead of leaving it running
+// under a hidden screen — see nav.js for why that matters.
 
 import { playLine, pickVariant, playChime } from "./audio.js";
 import { recordGameSeen, recordMiss, todayLocalDateString } from "./progress.js";
 import { charPictureHtml } from "./garden.js";
+import { RunAborted, sleep, waitForTap, waitForClick, untilAborted, onAbortOfCurrentRun } from "./nav.js";
 
 // Records one miss toward the auto-shelve counter. Callers dedupe to at most
 // one miss per prompt, and only the recognition games call it (fast games
@@ -34,44 +38,6 @@ function shuffle(array) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
-}
-
-async function waitForTap(container, selector) {
-  return new Promise((resolve) => {
-    function handler(e) {
-      const tile = e.target.closest(selector);
-      if (!tile) return; // a miss shouldn't cost us the listener — keep waiting
-      container.removeEventListener("click", handler);
-      resolve(tile);
-    }
-    container.addEventListener("click", handler);
-  });
-}
-
-// ---------- daily rotation ----------
-//
-// A fixed 6-day cycle of hand-picked triples, indexed by a stable
-// "local epoch day" so the same calendar day always produces the same
-// lineup (no reroll on refresh). Chosen so that: G1 appears at least
-// every other day, G2 and G7 never share a day, and every 3-day window
-// covers the full 8-game pool at least once.
-const ROTATION_CYCLE = [
-  ["G1", "G3", "G4"],
-  ["G2", "G5", "G6"],
-  ["G1", "G7", "G8"],
-  ["G3", "G4", "G6"],
-  ["G1", "G2", "G5"],
-  ["G7", "G8", "G4"],
-];
-
-function localEpochDay(dateStr) {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return Math.floor(new Date(y, m - 1, d).getTime() / 86400000);
-}
-
-export function pickGamesForToday(todayStr) {
-  const index = ((localEpochDay(todayStr) % ROTATION_CYCLE.length) + ROTATION_CYCLE.length) % ROTATION_CYCLE.length;
-  return ROTATION_CYCLE[index];
 }
 
 // ---------- visual-confusable map (for G5, and available to any game) ----------
@@ -104,9 +70,9 @@ function findConfusableGroup(char) {
   return CONFUSABLE_GROUPS.find((group) => group.includes(char));
 }
 
-// Builds a metPool the same way session.js does, from progress + charMap,
-// for games (G5) that need to draw distractors from everything she's met
-// so far rather than just the 1-2 chars runGameArcade passed in.
+// Everything she's met so far (from progress + charMap), for games (G5)
+// that draw distractors from her whole pool rather than just the game's own
+// target list.
 function buildMetPool(progress, charMap) {
   return Object.keys(progress.characters)
     .map((char) => charMap.get(char))
@@ -161,7 +127,7 @@ async function handleTapResult(container, tile, isCorrect) {
   } else {
     await playLine(pickVariant("tryAgain", 3));
   }
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 }
 
 // One correct-or-retry round: shows choices, waits for a correct tap
@@ -292,11 +258,9 @@ async function sayItBeat(container, stream, entry, kind) {
   `);
   container.replaceChildren(compare);
   await playLine("echoDone");
-  compare.querySelector("#g2-model").addEventListener("click", () => playLine(modelKey));
-  compare.querySelector("#g2-mine").addEventListener("click", () => playBlob(take.blob));
-  await new Promise((resolve) => {
-    compare.querySelector("#g2-continue").addEventListener("click", resolve, { once: true });
-  });
+  compare.querySelector("#g2-model").addEventListener("click", () => playLine(modelKey).catch(() => {}));
+  compare.querySelector("#g2-mine").addEventListener("click", () => playBlob(take.blob).catch(() => {}));
+  await waitForClick(compare.querySelector("#g2-continue"));
 }
 
 async function runG2(container, { newChars, charMap, progress }) {
@@ -329,7 +293,7 @@ async function runG2(container, { newChars, charMap, progress }) {
 // timerFill animates from full to empty to show the time left. Resolves
 // when the window closes.
 function runBubbleRound(field, timerFill, poolEntries, targetEntry, roundMs) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let stopped = false;
 
     // Drive the countdown bar from JS rather than a CSS transition: a CSS
@@ -374,13 +338,23 @@ function runBubbleRound(field, timerFill, poolEntries, targetEntry, roundMs) {
 
     spawnBubble();
     const spawnInterval = setInterval(spawnBubble, 800);
-    setTimeout(() => {
+    const stopAll = () => {
       stopped = true;
       clearInterval(spawnInterval);
       clearInterval(timerTick);
+    };
+    const roundTimer = setTimeout(() => {
+      stopAll();
+      offAbort();
       timerFill.style.width = "0%";
       resolve();
     }, roundMs);
+    // Leaving the room mid-round: stop spawning and ticking immediately.
+    const offAbort = onAbortOfCurrentRun(() => {
+      stopAll();
+      clearTimeout(roundTimer);
+      reject(new RunAborted());
+    });
   });
 }
 
@@ -425,7 +399,7 @@ async function runG3(container, { newChars, distractorChars, charMap }) {
 
     // Visible boundary before the next character.
     field.innerHTML = "";
-    await new Promise((r) => setTimeout(r, 600));
+    await sleep(600);
   }
 
   await playLine(pickVariant("praise", 5));
@@ -477,8 +451,6 @@ async function runDictationRound(container, entry, charMap, distractorPool, intr
     tile.dataset.char = ch;
     grid.appendChild(tile);
   }
-  screen.querySelector(".dictation-replay").addEventListener("click", () => playLine(`word_${entry.char}`));
-
   // Handler is live before the audio plays, so she can start whenever.
   let expected = 0;
   let recordedMiss = false;
@@ -500,17 +472,18 @@ async function runDictationRound(container, entry, charMap, distractorPool, intr
         }
         tile.classList.add("dictation-wrong");
         setTimeout(() => tile.classList.remove("dictation-wrong"), 400);
-        playLine(pickVariant("tryAgain", 3));
+        playLine(pickVariant("tryAgain", 3)).catch(() => {});
       }
     });
   });
+  screen.querySelector(".dictation-replay").addEventListener("click", () => playLine(`word_${entry.char}`).catch(() => {}));
 
   if (introLine) await playLine(introLine);
   await playLine(`word_${entry.char}`);
-  await done;
+  await untilAborted(done);
 
   await playLine(pickVariant("praise", 5));
-  await new Promise((r) => setTimeout(r, 500));
+  await sleep(500);
 }
 
 async function runG4(container, { newChars, distractorChars, charMap, progress }) {
@@ -614,7 +587,7 @@ async function runG6(container, { newChars, distractorChars, charMap, progress }
       const isCorrect = tile.dataset.answerChar === partner;
       if (isCorrect) {
         tile.classList.add("correct");
-        await new Promise((r) => setTimeout(r, 300));
+        await sleep(300);
         // No dedicated illustration exists for the two-character word (only
         // per-character pictures) — showing entry's own picture here while
         // narrating the word was a mismatch. Just show the word itself.
@@ -629,7 +602,7 @@ async function runG6(container, { newChars, distractorChars, charMap, progress }
         await playLine(pickVariant("praise", 5));
         // Give her a moment to look at and hear the finished word before the
         // screen jumps to the next character's prompt.
-        await new Promise((r) => setTimeout(r, 1200));
+        await sleep(1200);
       } else {
         if (!recordedMiss) {
           noteMiss(progress, char); // one miss per prompt
@@ -707,25 +680,25 @@ async function runG7(container, { newChars, charMap }) {
     await playLine(`sentence_${char}`);
 
     let nextIndex = 0;
-    await new Promise((resolveGame) => {
-      tileEls.forEach((tile) => {
-        tile.addEventListener("click", async () => {
-          if (tile.classList.contains("placed")) return;
-          if (Number(tile.dataset.order) === nextIndex) {
-            tile.classList.add("placed");
-            strip.appendChild(tile);
-            nextIndex++;
-            if (nextIndex === tokens.length) {
-              await playLine(pickVariant("praise", 5));
-              resolveGame();
+    await untilAborted(
+      new Promise((resolveGame) => {
+        tileEls.forEach((tile) => {
+          tile.addEventListener("click", () => {
+            if (tile.classList.contains("placed")) return;
+            if (Number(tile.dataset.order) === nextIndex) {
+              tile.classList.add("placed");
+              strip.appendChild(tile);
+              nextIndex++;
+              if (nextIndex === tokens.length) resolveGame();
+            } else {
+              tile.classList.add("shake");
+              setTimeout(() => tile.classList.remove("shake"), 400);
             }
-          } else {
-            tile.classList.add("shake");
-            setTimeout(() => tile.classList.remove("shake"), 400);
-          }
+          });
         });
-      });
-    });
+      })
+    );
+    await playLine(pickVariant("praise", 5));
   }
 }
 
@@ -766,7 +739,7 @@ async function runG8(container, { newChars, distractorChars, charMap, progress }
         screen.querySelector(".panda-feed-scene").classList.add("chewing");
         tile.classList.add("correct");
         await playLine(pickVariant("praise", 5));
-        await new Promise((r) => setTimeout(r, 500));
+        await sleep(500);
       } else {
         if (!recordedMiss) {
           noteMiss(progress, char); // one miss per prompt

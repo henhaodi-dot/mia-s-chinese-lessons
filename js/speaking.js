@@ -24,6 +24,7 @@ import { saveRecording } from "./recordings.js";
 import { loadDialogues } from "./data.js";
 import { getAllStories, warmStoriesCache } from "./stories.js";
 import { runVoiceGallery } from "./voiceGallery.js";
+import { RunAborted, enterScreen, leaveScreen, sleep, waitForTap, waitForClick, waitForAnyClick, onAbortOfCurrentRun } from "./nav.js";
 
 const A1_WORD_COUNT = 4;
 const A2_SENTENCE_COUNT = 3;
@@ -128,11 +129,9 @@ async function showCompare(container, modelKey, blob) {
   `);
   container.replaceChildren(screen);
   await playLine("echoDone");
-  screen.querySelector("#btn-replay-model").addEventListener("click", () => playLine(modelKey));
-  screen.querySelector("#btn-replay-mine").addEventListener("click", () => playBlob(blob));
-  await new Promise((resolve) => {
-    screen.querySelector("#btn-echo-continue").addEventListener("click", resolve, { once: true });
-  });
+  screen.querySelector("#btn-replay-model").addEventListener("click", () => playLine(modelKey).catch(() => {}));
+  screen.querySelector("#btn-replay-mine").addEventListener("click", () => playBlob(blob).catch(() => {}));
+  await waitForClick(screen.querySelector("#btn-echo-continue"));
 }
 
 // ---------- A1 跟我说 (echo words) ----------
@@ -241,18 +240,13 @@ async function runOneDialogue(container, stream, dialogue) {
         <span class="dialogue-answer-text">${answer.text}</span>
       </button>
     `);
-    card.addEventListener("click", () => playLine(answer.audioKey)); // hear it on tap
+    card.addEventListener("click", () => playLine(answer.audioKey).catch(() => {})); // hear it on tap
     grid.appendChild(card);
   }
   container.replaceChildren(screen);
 
-  const chosen = await new Promise((resolve) => {
-    grid.addEventListener("click", (e) => {
-      const card = e.target.closest(".dialogue-answer-card");
-      if (card) resolve(card.dataset.key);
-    });
-  });
-  const answer = dialogue.answers.find((a) => a.audioKey === chosen);
+  const chosenCard = await waitForTap(grid, ".dialogue-answer-card");
+  const answer = dialogue.answers.find((a) => a.audioKey === chosenCard.dataset.key);
 
   // she SAYS her answer (records) — the recording is the point, not a score
   await echoOnce(container, stream, {
@@ -275,7 +269,7 @@ async function runOneDialogue(container, stream, dialogue) {
       `)
     );
     await playLine(followUp.audioKey);
-    await new Promise((r) => setTimeout(r, 700));
+    await sleep(700);
   }
   return 1;
 }
@@ -323,7 +317,7 @@ async function runStoryRetell(container, stream, progress, charMap) {
     `)
   );
   await playLine(story.audioKey);
-  await new Promise((r) => setTimeout(r, 500));
+  await sleep(500);
 
   // she retells the first line (she just heard the whole story, so no
   // separate per-line model audio is needed — she echoes from memory)
@@ -348,6 +342,7 @@ async function runSayItLoud(container, stream, progress, charMap) {
   await playLine("sayLoudIntro");
 
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return 0; // no Web Audio — skip the break rather than crash the room
   const actx = new AudioContextClass();
   const source = actx.createMediaStreamSource(stream);
   const analyser = actx.createAnalyser();
@@ -358,9 +353,10 @@ async function runSayItLoud(container, stream, progress, charMap) {
   // Listens for `ms`, live-scaling the on-screen word with her volume;
   // returns the peak RMS heard. Completion is driven by a real setTimeout,
   // not the sampling loop — a rAF/interval can pause or throttle in a
-  // backgrounded tab, and the round must never hang waiting on it.
+  // backgrounded tab, and the round must never hang waiting on it. Leaving
+  // the room ends it immediately.
   function listenVolume(wordEl, ms) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       let peak = 0;
       const sample = setInterval(() => {
         analyser.getFloatTimeDomainData(data);
@@ -370,33 +366,41 @@ async function runSayItLoud(container, stream, progress, charMap) {
         if (rms > peak) peak = rms;
         if (wordEl) wordEl.style.transform = `scale(${1 + Math.min(1.4, rms * 9)})`;
       }, 80);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         clearInterval(sample);
+        offAbort();
         resolve(peak);
       }, ms);
+      const offAbort = onAbortOfCurrentRun(() => {
+        clearInterval(sample);
+        clearTimeout(timer);
+        reject(new RunAborted());
+      });
     });
   }
 
-  let i = 0;
-  for (const entry of items) {
-    const listenMs = Math.max(1400, 2600 - i * 160); // speeds up
-    const screen = el(`
-      <div class="session-content">
-        <div class="loud-banner">🔊 大声说！</div>
-        <div class="loud-word">${entry.word}</div>
-      </div>
-    `);
-    container.replaceChildren(screen);
-    await playLine(`word_${entry.char}`);
-    const peak = await listenVolume(screen.querySelector(".loud-word"), listenMs);
-    // a little cheer scaled to how loud she was
-    screen.querySelector(".loud-word").classList.add(peak > 0.08 ? "loud-big" : "loud-ok");
-    await new Promise((r) => setTimeout(r, 350));
-    i++;
+  try {
+    let i = 0;
+    for (const entry of items) {
+      const listenMs = Math.max(1400, 2600 - i * 160); // speeds up
+      const screen = el(`
+        <div class="session-content">
+          <div class="loud-banner">🔊 大声说！</div>
+          <div class="loud-word">${entry.word}</div>
+        </div>
+      `);
+      container.replaceChildren(screen);
+      await playLine(`word_${entry.char}`);
+      const peak = await listenVolume(screen.querySelector(".loud-word"), listenMs);
+      // a little cheer scaled to how loud she was
+      screen.querySelector(".loud-word").classList.add(peak > 0.08 ? "loud-big" : "loud-ok");
+      await sleep(350);
+      i++;
+    }
+  } finally {
+    source.disconnect();
+    actx.close().catch(() => {});
   }
-
-  source.disconnect();
-  await actx.close().catch(() => {});
   return 0; // energy break — nothing saved
 }
 
@@ -431,16 +435,12 @@ async function showMessage(container, emoji, text, { withGallery = false } = {})
       </div>
     `)
   );
-  return new Promise((resolve) => {
-    const gallery = document.getElementById("btn-voice-gallery");
-    if (gallery) {
-      gallery.addEventListener("click", async () => {
-        await runVoiceGallery(container);
-        resolve("gallery"); // caller re-shows summary
-      }, { once: true });
-    }
-    document.getElementById("btn-speaking-done").addEventListener("click", () => resolve("done"), { once: true });
-  });
+  const choices = [[container.querySelector("#btn-speaking-done"), "done"]];
+  const gallery = container.querySelector("#btn-voice-gallery");
+  if (gallery) choices.push([gallery, "gallery"]);
+  const action = await waitForAnyClick(choices);
+  if (action === "gallery") await runVoiceGallery(container);
+  return action;
 }
 
 async function showSummary(container, count) {
@@ -459,39 +459,36 @@ async function showSummary(container, count) {
       `)
     );
     await playLine("speakingSummary");
-    action = await new Promise((resolve) => {
-      document.getElementById("btn-voice-gallery").addEventListener("click", async () => {
-        await runVoiceGallery(container);
-        resolve("gallery");
-      }, { once: true });
-      document.getElementById("btn-speaking-done").addEventListener("click", () => resolve("done"), { once: true });
-    });
+    action = await waitForAnyClick([
+      [container.querySelector("#btn-voice-gallery"), "gallery"],
+      [container.querySelector("#btn-speaking-done"), "done"],
+    ]);
+    if (action === "gallery") await runVoiceGallery(container);
   } while (action === "gallery");
 }
 
+// Resolves when she leaves via 回到花园; rejects with RunAborted if she leaves
+// via the back button / 🏠 (app.js swallows that). The mic is released and
+// the screen hidden in `finally` either way.
 export async function runSpeakingRoom(progress, charMap) {
-  const screen = document.getElementById("screen-speaking");
   const container = document.getElementById("speaking-content");
-  screen.classList.remove("hidden");
-  history.pushState({ hanziGardenScreen: "screen-speaking" }, "");
-  const exit = () => screen.classList.add("hidden");
-
-  if (!isRecordingSupported()) {
-    await showMessage(container, "🐼", "这台设备好像不能录音，我们下次再一起说话吧！");
-    exit();
-    return;
-  }
-
-  await playLine("speakingWelcome");
-
-  const stream = await ensureMicPermission(container, progress);
-  if (!stream) {
-    await showMessage(container, "🐼🎤", "熊猫需要麦克风才能听你说话。请家长在设置里打开麦克风，再回来玩。");
-    exit();
-    return;
-  }
+  const run = enterScreen("screen-speaking");
+  let stream = null;
 
   try {
+    if (!isRecordingSupported()) {
+      await showMessage(container, "🐼", "这台设备好像不能录音，我们下次再一起说话吧！");
+      return;
+    }
+
+    await playLine("speakingWelcome");
+
+    stream = await ensureMicPermission(container, progress);
+    if (!stream) {
+      await showMessage(container, "🐼🎤", "熊猫需要麦克风才能听你说话。请家长在设置里打开麦克风，再回来玩。");
+      return;
+    }
+
     if (Object.keys(progress.characters).length === 0) {
       await showMessage(container, "🐼", "还没有学过的字，先去认认字种一颗种子吧！");
       return;
@@ -502,7 +499,8 @@ export async function runSpeakingRoom(progress, charMap) {
     }
     await showSummary(container, recorded);
   } finally {
-    stream.getTracks().forEach((track) => track.stop());
-    exit();
+    if (stream) stream.getTracks().forEach((track) => track.stop());
+    container.replaceChildren();
+    leaveScreen("screen-speaking", run);
   }
 }

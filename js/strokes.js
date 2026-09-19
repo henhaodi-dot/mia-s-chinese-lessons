@@ -3,14 +3,25 @@
 // data from assets/strokes/{char}.json instead of Hanzi Writer's default CDN
 // loader, so animation/tracing works fully offline.
 
-// Hanzi Writer's charDataLoader uses a callback, not a Promise: it calls
-// onComplete(charData) when the fetch resolves.
-function localCharDataLoader(char, onComplete) {
+import { untilAborted } from "./nav.js";
+
+// Hanzi Writer's charDataLoader uses callbacks, not a Promise: it calls
+// onComplete(charData) when the fetch resolves, or onError(err) if it
+// can't. Reporting the failure (rather than silently never calling back,
+// as this used to) lets Hanzi Writer fire its onLoadCharDataError hook, so
+// an animation or quiz for a character with missing stroke data moves on
+// instead of waiting forever.
+function localCharDataLoader(char, onComplete, onError) {
   fetch(`assets/strokes/${encodeURIComponent(char)}.json`)
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(onComplete)
     .catch((err) => {
       console.error(`No stroke data for ${char}`, err);
+      if (onError) onError(err);
+      else onComplete(null);
     });
 }
 
@@ -38,22 +49,31 @@ function makeWriter(targetEl, char, overrides = {}) {
 const ANIMATION_TIMEOUT_MS = 20000;
 
 export function animateCharacterOnce(targetEl, char, { speed = 1, withNumbers = false } = {}) {
-  return new Promise((resolve) => {
-    const writer = makeWriter(targetEl, char, { strokeAnimationSpeed: speed });
-    if (withNumbers) {
-      localCharDataLoader(char, (charData) => {
-        addStrokeNumberBadges(targetEl, charData);
-      });
-    }
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
-    writer.animateCharacter({ onComplete: finish });
-    setTimeout(finish, ANIMATION_TIMEOUT_MS);
-  });
+  return untilAborted(
+    new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      let writer;
+      try {
+        writer = makeWriter(targetEl, char, { strokeAnimationSpeed: speed, onLoadCharDataError: finish });
+      } catch (err) {
+        console.error(`Could not create writer for ${char}`, err);
+        finish();
+        return;
+      }
+      if (withNumbers) {
+        localCharDataLoader(char, (charData) => {
+          if (charData) addStrokeNumberBadges(targetEl, charData);
+        });
+      }
+      writer.animateCharacter({ onComplete: finish });
+      setTimeout(finish, ANIMATION_TIMEOUT_MS);
+    })
+  );
 }
 
 function addStrokeNumberBadges(targetEl, charData) {
@@ -123,4 +143,47 @@ export function runWriteFromMemoryQuiz(targetEl, char, { onComplete, onMistake, 
     onComplete: (summary) => onComplete?.(summary),
   });
   return writer;
+}
+
+// ---------- promise-returning wrappers ----------
+// The rooms are async/await flows, so these are what they call: each
+// resolves when the quiz completes and rejects with RunAborted if the room
+// is left first (so the flow unwinds instead of waiting forever on a quiz
+// nobody can finish). If the stroke data can't load, they resolve
+// immediately rather than blocking the session.
+
+function quizPromise(run) {
+  return untilAborted(
+    new Promise((resolve) => {
+      try {
+        run(resolve);
+      } catch (err) {
+        console.error("stroke quiz failed to start", err);
+        resolve();
+      }
+    })
+  );
+}
+
+export function traceWithHints(targetEl, char) {
+  return quizPromise((resolve) => {
+    const writer = makeWriter(targetEl, char, { showOutline: true, onLoadCharDataError: resolve });
+    writer.quiz({ leniency: 1.5, showHintAfterMisses: 2, onComplete: resolve });
+  });
+}
+
+export function writeFromMemory(targetEl, char, { onMistake, showHintAfterMisses = 5 } = {}) {
+  return quizPromise((resolve) => {
+    const writer = makeWriter(targetEl, char, {
+      showCharacter: false,
+      showOutline: false,
+      onLoadCharDataError: resolve,
+    });
+    writer.quiz({
+      leniency: 1.5,
+      showHintAfterMisses,
+      onMistake: (data) => onMistake?.(data),
+      onComplete: resolve,
+    });
+  });
 }
