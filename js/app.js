@@ -96,7 +96,11 @@ async function openRoom(runFn) {
   const gen = roomGen;
   let result = null;
   try {
-    await unlockAudio();
+    // No await before runFn: the room's enterScreen must push its history
+    // entry within this same tap, or a back press during the audio unlock
+    // finds only the garden entry and leaves the app. (The unlock itself
+    // was already started by the capture-phase click listener in main();
+    // playLine waits for it.)
     result = await runFn();
   } catch (err) {
     if (!(err instanceof RunAborted)) console.error("Room failed:", err);
@@ -177,7 +181,6 @@ function renderGardenGrid() {
 
 async function handlePlantTap(char) {
   if (roomBusy) return;
-  await unlockAudio();
   // A resting plant isn't reviewed — just show its card so she can still
   // visit it (and the parent knows why it's asleep).
   if (isResting(progress.characters[char], todayLocalDateString())) {
