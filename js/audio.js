@@ -40,8 +40,21 @@ function ensureSfxCtx() {
   return sfxCtx;
 }
 
-export async function unlockAudio() {
-  if (unlocked) return;
+// One unlock per page, shared: the first call (from app.js's capture-phase
+// click listener, inside the very first tap's gesture) starts it, and every
+// later call — or playLine — just waits on that same promise. Callers used
+// to await their own unlock before opening a room, and that wait (up to 1s
+// on Silk) came BEFORE the room pushed its history entry, so a back press
+// in that window left the app. A second overlapping unlock also replayed
+// the empty src for nothing.
+let unlockPromise = null;
+
+export function unlockAudio() {
+  if (!unlockPromise) unlockPromise = doUnlock();
+  return unlockPromise;
+}
+
+async function doUnlock() {
   try {
     sharedAudio.src = "";
     const played = sharedAudio.play().catch(() => {});
@@ -148,7 +161,9 @@ export function playLine(key) {
   // The first play of each key waits on a HEAD probe (up to 1.5s on the
   // tablet's real connection). That wait must be an abort point too —
   // leaving the room during it used to let the run carry on afterwards.
-  return untilAborted(resolveAudioPath(key)).then(
+  // It also waits for a pending unlock to finish: the unlock ends with
+  // sharedAudio.pause(), which would otherwise cut off the room's first line.
+  return untilAborted(Promise.all([resolveAudioPath(key), unlockPromise])).then(([path]) => path).then(
     (path) =>
       new Promise((resolve, reject) => {
         let settled = false;
