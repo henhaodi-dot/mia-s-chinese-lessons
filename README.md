@@ -84,7 +84,7 @@ bump the service worker cache version (below), and redeploy.
 ## Deploying to GitHub Pages
 
 1. Push this repo to GitHub.
-2. In the repo's Settings → Pages, set the source to the `main` branch,
+2. In the repo's Settings → Pages, set the source to the `master` branch,
    root folder.
 3. GitHub Pages will serve `index.html` at the repo's Pages URL. No build
    step is needed — it's already a static site.
