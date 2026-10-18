@@ -234,7 +234,7 @@ async function sayItBeat(container, stream, entry, kind) {
   await playLine("listenToYourself");
   await playBlob(take.blob);
 
-  await saveRecording({
+  await untilAborted(saveRecording({
     id: modelKey,
     blob: take.blob,
     char: entry.char,
@@ -244,7 +244,7 @@ async function sayItBeat(container, stream, entry, kind) {
     rms: take.rms,
     modelKey,
     createdAt: Date.now(),
-  });
+  }));
 
   const compare = el(`
     <div class="session-content">

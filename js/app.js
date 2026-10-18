@@ -35,6 +35,11 @@ let charMap;
 // while one is opening used to start a second room on top of the first —
 // two flows rendering into the same screens at once.
 let roomBusy = false;
+// Bumped whenever a room is torn down from outside (popstate), so a room's
+// own late `finally` can tell it no longer owns roomBusy. Without it, an old
+// room unwinding after a new one opened cleared the flag, and a door tap
+// could start a second room on top of the open one.
+let roomGen = 0;
 
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.add("hidden"));
@@ -69,6 +74,7 @@ window.addEventListener("popstate", (e) => {
   if (state.hanziGardenScreen && state.run !== undefined && state.run === currentRunId()) return;
   abortRun();
   stopAllAudio();
+  roomGen += 1;
   roomBusy = false;
   showScreen("screen-garden");
   refreshGarden();
@@ -87,6 +93,7 @@ window.addEventListener("unhandledrejection", (e) => {
 async function openRoom(runFn) {
   if (roomBusy) return null;
   roomBusy = true;
+  const gen = roomGen;
   let result = null;
   try {
     await unlockAudio();
@@ -94,7 +101,7 @@ async function openRoom(runFn) {
   } catch (err) {
     if (!(err instanceof RunAborted)) console.error("Room failed:", err);
   } finally {
-    roomBusy = false;
+    if (gen === roomGen) roomBusy = false;
     refreshGarden();
   }
   return result;

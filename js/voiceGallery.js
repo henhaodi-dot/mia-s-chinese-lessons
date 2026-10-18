@@ -8,7 +8,7 @@
 import { playLine } from "./audio.js";
 import { playBlob } from "./recorder.js";
 import { getAllRecordings, recordingScore } from "./recordings.js";
-import { waitForClick } from "./nav.js";
+import { untilAborted, waitForClick } from "./nav.js";
 
 // Above this "loud + long enough" score, a clip gets the gold border.
 const GOLD_SCORE = 0.06;
@@ -59,7 +59,7 @@ async function playHersModelHers(rec) {
 }
 
 export async function runVoiceGallery(container) {
-  const recordings = (await getAllRecordings()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const recordings = (await untilAborted(getAllRecordings())).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   if (recordings.length === 0) {
     container.replaceChildren(

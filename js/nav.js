@@ -33,8 +33,10 @@ export class RunAborted extends Error {
 let current = null; // { id, controller }
 let runSeq = 0;
 
+// An aborted run that hasn't unwound yet reports no id: it no longer owns
+// its history entry (app.js's popstate check relies on that).
 export function currentRunId() {
-  return current ? current.id : null;
+  return current && !current.controller.signal.aborted ? current.id : null;
 }
 
 function currentSignal() {
@@ -60,9 +62,20 @@ function startRun() {
 }
 
 // Aborts the run in flight, if any. Safe to call when nothing is running.
+//
+// The aborted run deliberately STAYS current until its room unwinds
+// (leaveScreen → endRun) or the next run starts. It used to be cleared right
+// here, and that turned any non-abortable await into a zombie: a run that
+// was parked in, say, playLine's first-play HEAD probe when 🏠 was tapped
+// woke up to find no current run at all, so every later sleep/waitForTap/
+// playLine bound to nothing and could never be aborted again — the panda
+// kept talking over the garden, held the mic, and left a tap listener on
+// the shared container that scored the NEXT visit's taps. Keeping the
+// aborted signal around makes any such late call reject at once instead.
+// (Side effect: a garden-level playLine in that brief window rejects too —
+// silence, which is the safe failure.)
 export function abortRun() {
   if (current && !current.controller.signal.aborted) current.controller.abort();
-  current = null;
 }
 
 function endRun(run) {
@@ -88,8 +101,10 @@ export function enterScreen(id) {
 }
 
 export function leaveScreen(id, run) {
+  // Only hide the screen if no newer run has taken over: a late unwind of an
+  // old room must not blank a fresh visit to the same room.
   const screen = document.getElementById(id);
-  if (screen) screen.classList.add("hidden");
+  if (screen && (current === null || current === run)) screen.classList.add("hidden");
   const wasAborted = run.controller.signal.aborted;
   endRun(run);
   // On an abort the entry was already popped (that's what triggered the

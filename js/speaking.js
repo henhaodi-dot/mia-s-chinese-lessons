@@ -24,7 +24,7 @@ import { saveRecording } from "./recordings.js";
 import { loadDialogues } from "./data.js";
 import { getAllStories, warmStoriesCache } from "./stories.js";
 import { runVoiceGallery } from "./voiceGallery.js";
-import { RunAborted, enterScreen, leaveScreen, sleep, waitForTap, waitForClick, waitForAnyClick, onAbortOfCurrentRun } from "./nav.js";
+import { RunAborted, enterScreen, leaveScreen, sleep, waitForTap, waitForClick, waitForAnyClick, untilAborted, onAbortOfCurrentRun } from "./nav.js";
 
 const A1_WORD_COUNT = 4;
 const A2_SENTENCE_COUNT = 3;
@@ -101,7 +101,9 @@ async function echoOnce(container, stream, { showHtml, modelKeys, saveId, saveMe
   await playBlob(take.blob);
 
   if (saveId) {
-    await saveRecording({
+    // IndexedDB and the fetches below resolve on their own callbacks —
+    // wrapped so leaving the room mid-save can't let the run resume later.
+    await untilAborted(saveRecording({
       id: saveId,
       blob: take.blob,
       durationMs: take.durationMs,
@@ -109,7 +111,7 @@ async function echoOnce(container, stream, { showHtml, modelKeys, saveId, saveMe
       createdAt: Date.now(),
       modelKey: compareModelKey, // so the gallery can replay the model
       ...saveMeta,
-    });
+    }));
   }
 
   await showCompare(container, compareModelKey, take.blob);
@@ -275,7 +277,7 @@ async function runOneDialogue(container, stream, dialogue) {
 }
 
 async function runDialogues(container, stream, progress) {
-  const dialogues = await loadDialogues();
+  const dialogues = await untilAborted(loadDialogues());
   const chosen = pickDialogues(progress, dialogues, A3_EXCHANGE_COUNT);
   if (chosen.length === 0) return 0;
   await playLine("dialogueIntro");
@@ -295,8 +297,8 @@ function firstSentenceOf(text) {
 }
 
 async function runStoryRetell(container, stream, progress, charMap) {
-  await warmStoriesCache();
-  const stories = await getAllStories();
+  await untilAborted(warmStoriesCache());
+  const stories = await untilAborted(getAllStories());
   if (stories.length === 0) return 0;
 
   // Prefer a story whose characters she mostly knows.
@@ -344,8 +346,17 @@ async function runSayItLoud(container, stream, progress, charMap) {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return 0; // no Web Audio — skip the break rather than crash the room
   const actx = new AudioContextClass();
-  const source = actx.createMediaStreamSource(stream);
-  const analyser = actx.createAnalyser();
+  let source;
+  let analyser;
+  try {
+    source = actx.createMediaStreamSource(stream);
+    analyser = actx.createAnalyser();
+  } catch {
+    // An ended stream throws here — skip the break, but never leak the
+    // context (the tablet only allows a handful at once).
+    actx.close().catch(() => {});
+    return 0;
+  }
   analyser.fftSize = 512;
   source.connect(analyser);
   const data = new Float32Array(analyser.fftSize);

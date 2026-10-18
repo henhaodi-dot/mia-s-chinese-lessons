@@ -11,7 +11,7 @@
 
 import { playLine } from "./audio.js";
 import { saveProgress } from "./progress.js";
-import { RunAborted, isAborted, onAbortOfCurrentRun, waitForClick } from "./nav.js";
+import { RunAborted, isAborted, onAbortOfCurrentRun, untilAborted, waitForClick } from "./nav.js";
 
 const MAX_RECORD_MS = 7000; // hard cap so a stuck recording can't run forever
 const SILENCE_STOP_MS = 1300; // stop this long after she stops talking
@@ -75,9 +75,19 @@ export async function ensureMicPermission(container, progress) {
     saveProgress(progress);
   }
 
+  // Opening the mic takes a few hundred ms on the tablet — long enough for a
+  // 🏠 tap to land in between. The await must be an abort point (a swallowed
+  // RunAborted here let the room keep recording in the background), and the
+  // stream that still arrives afterwards must be stopped, or the mic stays
+  // on with nobody holding it.
+  const request = navigator.mediaDevices.getUserMedia({ audio: true });
   try {
-    return await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
+    return await untilAborted(request);
+  } catch (err) {
+    if (err instanceof RunAborted) {
+      request.then((stream) => stream.getTracks().forEach((track) => track.stop()), () => {});
+      throw err;
+    }
     return null; // denied or no mic — caller shows the friendly fallback
   }
 }

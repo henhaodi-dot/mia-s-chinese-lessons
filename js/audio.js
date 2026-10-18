@@ -8,7 +8,7 @@
 // exists at assets/audio/custom/{key}.mp3 it always wins over the
 // generated one — that's how a parent's own recording overrides a line.
 
-import { RunAborted, isAborted, onAbortOfCurrentRun } from "./nav.js";
+import { RunAborted, isAborted, onAbortOfCurrentRun, untilAborted } from "./nav.js";
 
 const sharedAudio = new Audio();
 let unlocked = false;
@@ -145,7 +145,10 @@ export function playLine(key) {
   // is what unwinds a room whose next step was a spoken line.
   if (isAborted()) return Promise.reject(new RunAborted());
 
-  return resolveAudioPath(key).then(
+  // The first play of each key waits on a HEAD probe (up to 1.5s on the
+  // tablet's real connection). That wait must be an abort point too —
+  // leaving the room during it used to let the run carry on afterwards.
+  return untilAborted(resolveAudioPath(key)).then(
     (path) =>
       new Promise((resolve, reject) => {
         let settled = false;
