@@ -16,7 +16,8 @@ import {
 import { growthStageFor } from "./scheduler.js";
 import { STAGE_EMOJI } from "./garden.js";
 import { playLine, pickVariant } from "./audio.js";
-import { animateCharacterOnce, runTraceHintQuiz, runWriteFromMemoryQuiz } from "./strokes.js";
+import { animateCharacterOnce, traceWithHints, writeFromMemory } from "./strokes.js";
+import { RunAborted, sleep, untilAborted } from "./nav.js";
 
 const WATCH_SLOW_SPEED = 0.6;
 const WATCH_FAST_SPEED = 1.2;
@@ -36,22 +37,47 @@ function orderedPracticeChars(progress, charMap, todayStr) {
     .filter(([, state]) => state.source === "daily" && state.dateLearned === todayStr)
     .map(([char]) => char);
   const rest = entries
-    .filter(([char]) => !todaysNew.includes(char))
+    .filter(([char]) => !todaysNew.includes(char) && charMap.has(char))
     .sort((a, b) => charMap.get(a[0]).rank - charMap.get(b[0]).rank)
     .map(([char]) => char);
   return [...todaysNew, ...rest];
 }
 
-export function runPracticeStudio(progress, charMap) {
+// Resolves when she taps ⬅️ (back to wherever the studio was opened from).
+// The studio is part of the character room's run, so leaving the room
+// (back button / 🏠) rejects this with RunAborted and the room unwinds; the
+// screen is hidden in `finally` either way.
+export async function runPracticeStudio(progress, charMap) {
   const screen = document.getElementById("screen-studio");
   const container = document.getElementById("studio-content");
   screen.classList.remove("hidden");
+  const persistentExit = screen.querySelector(".room-exit");
 
-  return new Promise((resolveStudio) => {
-  function exitStudio() {
+  try {
+    await untilAborted(new Promise((resolveStudio) => runStudioUi(container, progress, charMap, resolveStudio, persistentExit)));
+  } finally {
+    if (persistentExit) persistentExit.onclick = null;
+    container.replaceChildren();
     screen.classList.add("hidden");
+  }
+}
+
+// The mode handlers below run from click events, so an abort mid-quiz
+// surfaces there as a RunAborted rejection — expected, not an error.
+function guarded(fn) {
+  return (...args) =>
+    Promise.resolve()
+      .then(() => fn(...args))
+      .catch((err) => {
+        if (!(err instanceof RunAborted)) console.error(err);
+      });
+}
+
+function runStudioUi(container, progress, charMap, resolveStudio, persistentExit) {
+  function exitStudio() {
     resolveStudio();
   }
+  if (persistentExit) persistentExit.onclick = exitStudio;
 
   function renderInkBottle(target) {
     const today = todayLocalDateString();
@@ -84,7 +110,7 @@ export function runPracticeStudio(progress, charMap) {
       `)
     );
     await playLine("inkBottleFull");
-    await new Promise((r) => setTimeout(r, 1400));
+    await sleep(1400);
   }
 
   function showPicker() {
@@ -101,7 +127,7 @@ export function runPracticeStudio(progress, charMap) {
           </div>
         `)
       );
-      document.getElementById("btn-studio-exit").addEventListener("click", exitStudio);
+      container.querySelector("#btn-studio-exit").addEventListener("click", exitStudio);
       return;
     }
 
@@ -116,7 +142,7 @@ export function runPracticeStudio(progress, charMap) {
     `);
     container.replaceChildren(screenEl);
     renderInkBottle(screenEl.querySelector("#studio-ink-bottle"));
-    document.getElementById("btn-studio-exit").addEventListener("click", exitStudio);
+    screenEl.querySelector("#btn-studio-exit").addEventListener("click", exitStudio);
 
     const grid = screenEl.querySelector("#studio-picker-grid");
     for (const char of chars) {
@@ -147,10 +173,10 @@ export function runPracticeStudio(progress, charMap) {
         </div>
       `)
     );
-    document.getElementById("mode-watch").addEventListener("click", () => runWatchMode(char));
-    document.getElementById("mode-trace").addEventListener("click", () => runTraceMode(char));
-    document.getElementById("mode-copy").addEventListener("click", () => runCopyMode(char));
-    document.getElementById("btn-studio-back").addEventListener("click", showPicker);
+    container.querySelector("#mode-watch").addEventListener("click", guarded(() => runWatchMode(char)));
+    container.querySelector("#mode-trace").addEventListener("click", guarded(() => runTraceMode(char)));
+    container.querySelector("#mode-copy").addEventListener("click", guarded(() => runCopyMode(char)));
+    container.querySelector("#btn-studio-back").addEventListener("click", showPicker);
   }
 
   async function runWatchMode(char) {
@@ -169,7 +195,7 @@ export function runPracticeStudio(progress, charMap) {
     container.replaceChildren(screenEl);
     const target = screenEl.querySelector("#studio-watch-target");
 
-    const play = () => animateCharacterOnce(target, char, { speed });
+    const play = () => animateCharacterOnce(target, char, { speed }).catch(() => {});
 
     screenEl.querySelector("#speed-slow").addEventListener("click", () => {
       speed = WATCH_SLOW_SPEED;
@@ -196,7 +222,7 @@ export function runPracticeStudio(progress, charMap) {
     const target = screenEl.querySelector("#studio-trace-target");
 
     await playLine(`char_${char}`);
-    await new Promise((resolve) => runTraceHintQuiz(target, char, { onComplete: resolve }));
+    await traceWithHints(target, char);
 
     await handlePracticeComplete(char);
     showCharacterModes(char);
@@ -215,15 +241,12 @@ export function runPracticeStudio(progress, charMap) {
     const target = screenEl.querySelector("#studio-copy-target");
 
     await playLine(`char_${char}`);
-    await new Promise((resolve) =>
-      runWriteFromMemoryQuiz(target, char, { showHintAfterMisses: COPY_HINT_AFTER_MISSES, onComplete: resolve })
-    );
+    await writeFromMemory(target, char, { showHintAfterMisses: COPY_HINT_AFTER_MISSES });
 
     await handlePracticeComplete(char);
     showCharacterModes(char);
   }
 
   showPicker();
-  playLine("studioWelcome"); // fire-and-forget — only on this first open, not every return-to-picker
-  }); // end of Promise — resolves when exitStudio() is called
+  playLine("studioWelcome").catch(() => {}); // fire-and-forget — only on this first open, not every return-to-picker
 }

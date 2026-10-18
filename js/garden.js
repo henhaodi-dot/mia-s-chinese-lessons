@@ -7,6 +7,7 @@ import { todayLocalDateString } from "./progress.js";
 import { buildDueQueue, pickTodaysNewCharacters, isDue } from "./scheduler.js";
 import { playLine } from "./audio.js";
 import { animateCharacterOnce } from "./strokes.js";
+import { currentRunId } from "./nav.js";
 
 // Growth-stage visuals — index matches growthStageFor()'s 0-5 box range.
 // Stage 0 is the same-day seed cosmetic described in scheduler.js. Shared
@@ -148,6 +149,7 @@ export function animateTodayStamp(progress) {
 // use the plain version without it.
 export function showCardModal(char, charMap, { withReplay = false } = {}) {
   const entry = charMap.get(char);
+  if (!entry) return; // a saved character that's no longer in characters.json — nothing to show
   const overlay = document.getElementById("card-modal");
   const content = document.getElementById("card-modal-content");
 
@@ -160,16 +162,31 @@ export function showCardModal(char, charMap, { withReplay = false } = {}) {
   overlay.classList.remove("hidden");
   // So the tablet's physical/gesture back button closes the modal instead
   // of leaving the app entirely — see the matching popstate handler in app.js.
-  history.pushState({ hanziGardenCardModal: true }, "");
-  playLine(`char_${char}`);
+  // The state carries the run id (if any) so that handler knows the modal
+  // sits on top of a room that must stay alive when the modal closes.
+  history.pushState({ hanziGardenCardModal: true, run: currentRunId() }, "");
+  playLine(`char_${char}`).catch(() => {});
 
   if (withReplay) {
-    document.getElementById("btn-replay-stroke").addEventListener("click", () => {
-      const emojiEl = document.getElementById("card-modal-emoji");
-      emojiEl.outerHTML = `<div class="writer-target" id="card-modal-writer"></div>`;
-      animateCharacterOnce(document.getElementById("card-modal-writer"), char, { speed: 0.6 });
+    content.querySelector("#btn-replay-stroke").addEventListener("click", () => {
+      // First tap swaps the picture for a writer; later taps just replay.
+      // (Looking the picture up again on the second tap used to throw,
+      // since it had already been replaced.)
+      let writerEl = content.querySelector("#card-modal-writer");
+      if (!writerEl) {
+        const emojiEl = content.querySelector("#card-modal-emoji");
+        writerEl = el(`<div class="writer-target" id="card-modal-writer"></div>`);
+        emojiEl.replaceWith(writerEl);
+      }
+      animateCharacterOnce(writerEl, char, { speed: 0.6 }).catch(() => {});
     });
   }
+}
+
+function el(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
 }
 
 export function hideCardModal() {

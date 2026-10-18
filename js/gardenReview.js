@@ -11,9 +11,10 @@
 import { todayLocalDateString, saveProgress, startReviewSession, recordMiss } from "./progress.js";
 import { isDue } from "./scheduler.js";
 import { playLine, pickVariant } from "./audio.js";
-import { runWriteFromMemoryQuiz } from "./strokes.js";
+import { writeFromMemory } from "./strokes.js";
 import { applyGardenTapOutcome } from "./reviewRules.js";
 import { VISITOR_EMOJI, charPictureHtml } from "./garden.js";
+import { enterScreen, leaveScreen, sleep } from "./nav.js";
 
 const HINT_THRESHOLD = 2;
 const STRUGGLE_HINTED_STROKE_LIMIT = 1;
@@ -24,26 +25,16 @@ function el(html) {
   return template.content.firstElementChild;
 }
 
-function getOverlayElements() {
-  return {
-    overlay: document.getElementById("screen-garden-review"),
-    container: document.getElementById("garden-review-content"),
-  };
-}
-
 async function runWriteFromMemoryStep(container, char) {
   container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
   const target = container.querySelector(".writer-target");
 
   const hintedStrokes = new Set();
-  await new Promise((resolve) => {
-    runWriteFromMemoryQuiz(target, char, {
-      showHintAfterMisses: HINT_THRESHOLD,
-      onMistake: (data) => {
-        if (data.mistakesOnStroke >= HINT_THRESHOLD) hintedStrokes.add(data.strokeNum);
-      },
-      onComplete: () => resolve(),
-    });
+  await writeFromMemory(target, char, {
+    showHintAfterMisses: HINT_THRESHOLD,
+    onMistake: (data) => {
+      if (data.mistakesOnStroke >= HINT_THRESHOLD) hintedStrokes.add(data.strokeNum);
+    },
   });
 
   return hintedStrokes.size > STRUGGLE_HINTED_STROKE_LIMIT;
@@ -58,7 +49,7 @@ async function showVisitorArrival(container, visitorId) {
     </div>
   `));
   await playLine(`visitorArrival_${visitorId}`);
-  await new Promise((r) => setTimeout(r, 800));
+  await sleep(800);
 }
 
 async function showOutcomeScreen(container, entry, outcomeResult) {
@@ -80,7 +71,7 @@ async function showOutcomeScreen(container, entry, outcomeResult) {
       </div>
     `));
     await playLine(pickVariant("heartPraise", 3));
-    await new Promise((r) => setTimeout(r, 400));
+    await sleep(400);
     for (const visitorId of outcomeResult.newVisitors || []) {
       await showVisitorArrival(container, visitorId);
     }
@@ -103,7 +94,7 @@ async function showOutcomeScreen(container, entry, outcomeResult) {
     await playLine("gardenStruggleLine");
   }
 
-  await new Promise((r) => setTimeout(r, 500));
+  await sleep(500);
 }
 
 // Returns the outcome ("grew" | "heart" | "content" | "struggled") so the
@@ -118,31 +109,35 @@ export async function runGardenTapReview(char, charMap, progress) {
   const wasDue = isDue(state, today);
   startReviewSession(progress); // window for auto-shelve miss counting
 
-  const { overlay, container } = getOverlayElements();
-  overlay.classList.remove("hidden");
-  history.pushState({ hanziGardenScreen: "screen-garden-review" }, "");
+  const container = document.getElementById("garden-review-content");
+  const run = enterScreen("screen-garden-review");
 
-  // 1. Flash the character + its sound, briefly.
-  container.replaceChildren(el(`
-    <div class="session-content">
-      <div class="big-character">${entry.char}</div>
-    </div>
-  `));
-  await playLine("gardenTapIntro");
-  await playLine(`char_${char}`);
-  await new Promise((r) => setTimeout(r, 700));
+  try {
+    // 1. Flash the character + its sound, briefly.
+    container.replaceChildren(el(`
+      <div class="session-content">
+        <div class="big-character">${entry.char}</div>
+      </div>
+    `));
+    await playLine("gardenTapIntro");
+    await playLine(`char_${char}`);
+    await sleep(700);
 
-  // 2. Write it from memory.
-  const struggled = await runWriteFromMemoryStep(container, char);
+    // 2. Write it from memory. Leaving here (back / 🏠) unwinds before
+    //    anything is scored — an abandoned review is neither a pass nor a
+    //    miss.
+    const struggled = await runWriteFromMemoryStep(container, char);
 
-  // 3. Apply the core rule — the only place box/nextDue/hearts change.
-  const outcomeResult = applyGardenTapOutcome(state, { isDue: wasDue, struggled }, today);
-  if (struggled) recordMiss(progress, char, today); // may shelve after enough recent misses
-  saveProgress(progress);
+    // 3. Apply the core rule — the only place box/nextDue/hearts change.
+    const outcomeResult = applyGardenTapOutcome(state, { isDue: wasDue, struggled }, today);
+    if (struggled) recordMiss(progress, char, today); // may shelve after enough recent misses
+    saveProgress(progress);
 
-  // 4. Completion beat.
-  await showOutcomeScreen(container, entry, outcomeResult);
-
-  overlay.classList.add("hidden");
-  return outcomeResult.outcome;
+    // 4. Completion beat.
+    await showOutcomeScreen(container, entry, outcomeResult);
+    return outcomeResult.outcome;
+  } finally {
+    container.replaceChildren();
+    leaveScreen("screen-garden-review", run);
+  }
 }

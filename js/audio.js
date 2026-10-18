@@ -8,6 +8,8 @@
 // exists at assets/audio/custom/{key}.mp3 it always wins over the
 // generated one — that's how a parent's own recording overrides a line.
 
+import { RunAborted, isAborted, onAbortOfCurrentRun, untilAborted } from "./nav.js";
+
 const sharedAudio = new Audio();
 let unlocked = false;
 
@@ -89,6 +91,7 @@ export function playChime(kind) {
 // Custom overrides are checked with a lightweight existence probe the
 // first time a key is played, then cached so we don't re-probe every time.
 const resolvedPathCache = new Map();
+const PROBE_TIMEOUT_MS = 1500;
 
 async function resolveAudioPath(key) {
   if (resolvedPathCache.has(key)) {
@@ -98,12 +101,19 @@ async function resolveAudioPath(key) {
   const customPath = `assets/audio/custom/${key}.mp3`;
   const generatedPath = `assets/audio/${key}.mp3`;
 
+  // Capped so a slow connection can't hold up a line for long — the probe
+  // is a nicety (custom recordings), the generated file is always there.
   let path = generatedPath;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
-    const res = await fetch(customPath, { method: "HEAD" });
+    const res = await fetch(customPath, { method: "HEAD", signal: controller.signal });
     if (res.ok) path = customPath;
   } catch {
-    // No custom override reachable — fall back to the generated file.
+    // No custom override reachable (or the probe timed out) — fall back to
+    // the generated file.
+  } finally {
+    clearTimeout(timer);
   }
 
   resolvedPathCache.set(key, path);
@@ -112,26 +122,65 @@ async function resolveAudioPath(key) {
 
 // Some failure modes (a missing file combined with an HTTP/1.0 server, in
 // particular) leave the audio element stuck in NETWORK_LOADING forever —
-// no 'ended', no 'error', no rejected play() promise. A hard timeout makes
-// sure a bad or absent audio file can never block the session.
-const PLAY_TIMEOUT_MS = 4000;
+// no 'ended', no 'error', no rejected play() promise. So there's a hard
+// timeout, but it's a STALL timeout: it only fires if playback never
+// actually starts. Once the clip is playing, the ceiling becomes its real
+// duration plus a margin. (A flat 4s cutoff used to end every line at 4s —
+// and 42 of the generated lines, including several game instructions and
+// every story-retell line, are longer than that, so the panda got cut off
+// mid-sentence.)
+const STALL_TIMEOUT_MS = 4000;
+const MAX_LINE_MS = 30000;
 
-export async function playLine(key) {
-  const path = await resolveAudioPath(key);
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
+export function stopAudio() {
+  try {
+    sharedAudio.pause();
+  } catch {
+    // Nothing to stop.
+  }
+}
 
-    sharedAudio.src = path;
-    sharedAudio.onended = finish;
-    sharedAudio.onerror = finish; // missing audio shouldn't block the session
-    sharedAudio.play().catch(finish);
-    setTimeout(finish, PLAY_TIMEOUT_MS);
-  });
+export function playLine(key) {
+  // Inside an aborted room there's nothing left to say — and rejecting here
+  // is what unwinds a room whose next step was a spoken line.
+  if (isAborted()) return Promise.reject(new RunAborted());
+
+  // The first play of each key waits on a HEAD probe (up to 1.5s on the
+  // tablet's real connection). That wait must be an abort point too —
+  // leaving the room during it used to let the run carry on afterwards.
+  return untilAborted(resolveAudioPath(key)).then(
+    (path) =>
+      new Promise((resolve, reject) => {
+        let settled = false;
+        let timer = null;
+        const settle = (fn) => {
+          if (settled) return;
+          settled = true;
+          if (timer !== null) clearTimeout(timer);
+          offAbort();
+          fn();
+        };
+        const finish = () => settle(resolve);
+        const offAbort = onAbortOfCurrentRun(() => {
+          stopAudio();
+          settle(() => reject(new RunAborted()));
+        });
+
+        sharedAudio.src = path;
+        sharedAudio.onended = finish;
+        sharedAudio.onerror = finish; // missing audio shouldn't block the session
+        sharedAudio.onplaying = () => {
+          // Playback started — swap the stall guard for a duration-based one.
+          if (settled) return;
+          if (timer !== null) clearTimeout(timer);
+          const d = sharedAudio.duration;
+          const ceiling = Number.isFinite(d) && d > 0 ? Math.min(MAX_LINE_MS, d * 1000 + 2000) : MAX_LINE_MS;
+          timer = setTimeout(finish, ceiling);
+        };
+        timer = setTimeout(finish, STALL_TIMEOUT_MS);
+        sharedAudio.play().catch(finish);
+      })
+  );
 }
 
 // Plays a sequence of keys back-to-back, waiting for each to finish.

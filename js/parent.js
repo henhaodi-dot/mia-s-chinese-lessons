@@ -152,9 +152,9 @@ function fillSettingsFields(progress) {
 function renderProgressTable(progress, charMap) {
   const table = document.getElementById("progress-table");
   const today = todayLocalDateString();
-  const rows = Object.entries(progress.characters).sort(
-    (a, b) => charMap.get(a[0]).rank - charMap.get(b[0]).rank
-  );
+  const rows = Object.entries(progress.characters)
+    .filter(([char]) => charMap.has(char)) // a saved char no longer in characters.json can't be described
+    .sort((a, b) => charMap.get(a[0]).rank - charMap.get(b[0]).rank);
 
   const accuracyFor = (state) =>
     state.timesSeen > 0 ? `${Math.round((state.timesCorrect / state.timesSeen) * 100)}%` : "—";
@@ -413,9 +413,10 @@ function wireEvents(progress, charMap, onChange) {
         alert("导入成功！页面将会刷新。");
         location.reload();
       } catch {
-        alert("这个文件看起来不是有效的进度文件。");
+        alert("这个文件看起来不是有效的进度文件，当前进度没有改变。");
       }
     };
+    reader.onerror = () => alert("读取文件失败，当前进度没有改变。");
     reader.readAsText(file);
     e.target.value = "";
   });

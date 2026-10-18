@@ -73,11 +73,45 @@ export function loadProgress() {
     return makeDefaultProgress();
   }
 
-  return migrate(parsed);
+  const migrated = migrate(parsed);
+  // Persist any repair/migration right away, so the stored blob is always in
+  // the current shape (an export taken before the next save would otherwise
+  // still carry the old one).
+  if (JSON.stringify(migrated) !== raw) saveProgress(migrated);
+  return migrated;
+}
+
+// True for a plain object (not null, not an array) — the only shape a saved
+// progress blob or any of its sub-records can have.
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function migrate(progress) {
   const fromVersion = progress.schemaVersion || 1;
+
+  // Structural repair, before any versioned migration: every top-level
+  // container the rest of the app dereferences without checking must exist
+  // with the right shape. A blob missing one of these (a hand-edited or
+  // partially-written export, an older build's format, a wrong file that
+  // slipped past the import check) used to throw during the very first
+  // garden render — a blank screen until site data was cleared. Missing
+  // pieces get defaults; present ones are never touched.
+  const defaults = makeDefaultProgress();
+  if (!isRecord(progress.settings)) progress.settings = {};
+  for (const [key, value] of Object.entries(defaults.settings)) {
+    if (progress.settings[key] === undefined) progress.settings[key] = value;
+  }
+  if (typeof progress.pandaName !== "string" || !progress.pandaName) progress.pandaName = defaults.pandaName;
+  if (!isRecord(progress.characters)) progress.characters = {};
+  for (const [char, state] of Object.entries(progress.characters)) {
+    // A character record without a box/nextDue can't be scheduled — drop
+    // it rather than let every isDue()/growthStageFor() call trip on it.
+    if (!isRecord(state) || typeof state.box !== "number" || typeof state.nextDue !== "string") {
+      delete progress.characters[char];
+    }
+  }
+  if (!Array.isArray(progress.sessionLog)) progress.sessionLog = [];
 
   if (fromVersion < 2) {
     // v2 adds: sessionLog (empty is fine, it's just history), and per-
@@ -103,7 +137,7 @@ function migrate(progress) {
   // rank order), so existing data needs no touch-up.
 
   // Backfill streakCalendar for all days from startDate to today.
-  if (!progress.streakCalendar) progress.streakCalendar = {};
+  if (!isRecord(progress.streakCalendar)) progress.streakCalendar = {};
   const start = progress.settings?.startDate;
   if (start && Object.keys(progress.streakCalendar).length === 0) {
     const today = todayLocalDateString();
@@ -122,7 +156,14 @@ function migrate(progress) {
 
 export function saveProgress(progress) {
   progress.streakCalendar[todayLocalDateString()] = true;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  } catch (err) {
+    // Storage full or blocked (private mode, quota). The in-memory state is
+    // still right for this session; better to keep playing than to crash
+    // mid-game over a save.
+    console.warn("Could not save progress:", err);
+  }
 }
 
 // ---------- character state helpers ----------
@@ -252,7 +293,14 @@ export function exportProgressJson(progress) {
   return JSON.stringify(progress, null, 2);
 }
 
+// Throws on anything that isn't a Hanzi Garden progress export, so Parent
+// Corner can say "not a progress file" instead of overwriting good data
+// with, say, a story episode JSON that happened to be nearby.
 export function importProgressJson(json) {
   const parsed = JSON.parse(json);
+  if (!isRecord(parsed)) throw new Error("not a progress object");
+  if (!isRecord(parsed.characters) || !isRecord(parsed.settings)) {
+    throw new Error("not a progress file");
+  }
   return migrate(parsed);
 }

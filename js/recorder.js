@@ -11,6 +11,7 @@
 
 import { playLine } from "./audio.js";
 import { saveProgress } from "./progress.js";
+import { RunAborted, isAborted, onAbortOfCurrentRun, untilAborted, waitForClick } from "./nav.js";
 
 const MAX_RECORD_MS = 7000; // hard cap so a stuck recording can't run forever
 const SILENCE_STOP_MS = 1300; // stop this long after she stops talking
@@ -68,17 +69,25 @@ export async function ensureMicPermission(container, progress) {
       </div>
     `);
     container.replaceChildren(screen);
-    playLine("echoMicExplain");
-    await new Promise((resolve) => {
-      document.getElementById("btn-mic-start").addEventListener("click", resolve, { once: true });
-    });
+    playLine("echoMicExplain").catch(() => {});
+    await waitForClick(screen.querySelector("#btn-mic-start"));
     progress.settings.micPrompted = true;
     saveProgress(progress);
   }
 
+  // Opening the mic takes a few hundred ms on the tablet — long enough for a
+  // 🏠 tap to land in between. The await must be an abort point (a swallowed
+  // RunAborted here let the room keep recording in the background), and the
+  // stream that still arrives afterwards must be stopped, or the mic stays
+  // on with nobody holding it.
+  const request = navigator.mediaDevices.getUserMedia({ audio: true });
   try {
-    return await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
+    return await untilAborted(request);
+  } catch (err) {
+    if (err instanceof RunAborted) {
+      request.then((stream) => stream.getTracks().forEach((track) => track.stop()), () => {});
+      throw err;
+    }
     return null; // denied or no mic — caller shows the friendly fallback
   }
 }
@@ -88,6 +97,13 @@ export async function ensureMicPermission(container, progress) {
 // Returns { blob, hadSpeech, durationMs, rms } — rms is the loudest frame
 // seen, used for the "best take" / gold-clip heuristics.
 export async function recordWithUI(container, stream) {
+  if (isAborted()) throw new RunAborted();
+  // A stream whose tracks have already been stopped (e.g. the mic was
+  // released while a layer was switching) can't be recorded — treat it as
+  // a silent take rather than letting MediaRecorder throw mid-activity.
+  if (!stream || !stream.active) {
+    return { blob: new Blob([], { type: "audio/webm" }), hadSpeech: false, durationMs: 0, rms: 0 };
+  }
   const screen = el(`
     <div class="session-content">
       <div class="echo-record-ring-wrap">
@@ -198,7 +214,16 @@ export async function recordWithUI(container, stream) {
   draw();
 
   stopButton.addEventListener("click", finish, { once: true });
+  // Leaving the room mid-take (back button) ends the take right away so the
+  // recorder and analyser are always torn down — never left running under a
+  // hidden screen.
+  let aborted = false;
+  const offAbort = onAbortOfCurrentRun(() => {
+    aborted = true;
+    finish();
+  });
   await finishedPromise;
+  offAbort();
 
   clearTimeout(capTimer);
   drawing = false;
@@ -206,33 +231,96 @@ export async function recordWithUI(container, stream) {
   const durationMs = performance.now() - startedAt;
 
   const blob = await new Promise((resolve) => {
+    // A recorder that's already inactive (the stream ended underneath it)
+    // never fires 'stop' — resolve with whatever was captured instead.
+    if (recorder.state === "inactive") {
+      resolve(new Blob(chunks, { type: mimeType || "audio/webm" }));
+      return;
+    }
     recorder.addEventListener(
       "stop",
       () => resolve(new Blob(chunks, { type: mimeType || "audio/webm" })),
       { once: true }
     );
-    recorder.stop();
+    try {
+      recorder.stop();
+    } catch {
+      resolve(new Blob(chunks, { type: mimeType || "audio/webm" }));
+    }
   });
 
   source.disconnect();
   await audioCtx.close().catch(() => {});
 
+  if (aborted) throw new RunAborted();
   return { blob, hadSpeech: speechMs >= MIN_SPEECH_MS, durationMs, rms: peakRms };
 }
 
 // Plays a recorded Blob through a dedicated <audio> element (separate from
 // audio.js's shared model-audio element so the two never fight). Resolves
-// when playback ends. Accepts a Blob or an object URL string.
+// when playback ends. Accepts a Blob or an object URL string. Only one blob
+// plays at a time — starting a new one cuts the previous one (so tapping
+// around the voice gallery never stacks overlapping playbacks), and leaving
+// the room stops it. A stall/duration guard mirrors playLine's so a clip the
+// browser can't decode never hangs the flow.
+const BLOB_STALL_TIMEOUT_MS = 4000;
+const BLOB_MAX_MS = 20000;
+let currentPlayer = null;
+
+export function stopBlobPlayback() {
+  if (currentPlayer) {
+    try {
+      currentPlayer.pause();
+    } catch {
+      // Nothing to stop.
+    }
+    currentPlayer = null;
+  }
+}
+
 export function playBlob(blob) {
-  return new Promise((resolve) => {
+  if (isAborted()) return Promise.reject(new RunAborted());
+  if (!blob || (typeof blob !== "string" && blob.size === 0)) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    stopBlobPlayback();
     const url = typeof blob === "string" ? blob : URL.createObjectURL(blob);
     const player = new Audio(url);
-    const finish = () => {
+    currentPlayer = player;
+    let settled = false;
+    let timer = null;
+    const settle = (fn) => {
+      if (settled) return;
+      settled = true;
+      if (timer !== null) clearTimeout(timer);
+      offAbort();
       if (typeof blob !== "string") URL.revokeObjectURL(url);
-      resolve();
+      if (currentPlayer === player) currentPlayer = null;
+      fn();
     };
+    const finish = () => settle(resolve);
+    const offAbort = onAbortOfCurrentRun(() => {
+      try {
+        player.pause();
+      } catch {
+        // Nothing to stop.
+      }
+      settle(() => reject(new RunAborted()));
+    });
     player.onended = finish;
     player.onerror = finish;
+    player.onpause = () => {
+      // Cut by a newer playBlob() (or stopBlobPlayback) — hand control back.
+      if (!player.ended) finish();
+    };
+    player.onplaying = () => {
+      if (settled) return;
+      if (timer !== null) clearTimeout(timer);
+      const d = player.duration;
+      const ceiling = Number.isFinite(d) && d > 0 ? Math.min(BLOB_MAX_MS, d * 1000 + 2000) : BLOB_MAX_MS;
+      timer = setTimeout(finish, ceiling);
+    };
+    timer = setTimeout(finish, BLOB_STALL_TIMEOUT_MS);
     player.play().catch(finish);
   });
 }

@@ -4,10 +4,36 @@
 // Layer 3: 说一说 — hear a phrase, record yourself, play back
 // Layer 4: 写一写 — trace characters from the episode
 
-import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
-import { loadProgress, saveProgress } from "./progress.js";
+import { ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
+import { RunAborted, enterScreen, leaveScreen, untilAborted } from "./nav.js";
 
 let currentAssetBase = "";
+
+// The 说一说 layer's microphone stream. Held here (not per render) so one
+// permission grant covers the whole episode, and released by releaseMic()
+// whenever she leaves the layer, the episode, or the room — before this,
+// the stream was never stopped, so the tablet's mic indicator stayed on
+// until the app was fully closed.
+let micStream = null;
+
+function releaseMic() {
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop());
+    micStream = null;
+  }
+}
+
+// Click handlers in here are async (record → play back); if the room is
+// left mid-take they reject with RunAborted, which is expected — anything
+// else is a real error worth seeing in the console.
+function guarded(fn) {
+  return (...args) =>
+    Promise.resolve()
+      .then(() => fn(...args))
+      .catch((err) => {
+        if (!(err instanceof RunAborted)) console.error(err);
+      });
+}
 
 let storyAudio = null;
 function getStoryAudio() {
@@ -27,10 +53,11 @@ function playStoryAudio(file) {
   });
 }
 
-function stopStoryAudio() {
+export function stopStoryAudio() {
   if (storyAudio) {
     storyAudio.pause();
-    storyAudio.src = "";
+    storyAudio.removeAttribute("src");
+    storyAudio.load();
   }
 }
 
@@ -42,20 +69,41 @@ function el(html) {
 
 // ── Episode picker (entry screen) ──────────────────────────────
 
+// Resolves when she leaves via the picker's ⬅️; rejects with RunAborted on
+// the back button / 🏠 (app.js swallows that). Registers with history like
+// the other rooms — it used to be the one screen where the tablet's back
+// button left the app entirely.
 export async function runStoryMode(progress, charMap) {
   const container = document.getElementById("story-content");
-  const screen = document.getElementById("screen-story");
-  screen.classList.remove("hidden");
+  const run = enterScreen("screen-story");
 
-  const episodes = await loadEpisodes();
-
-  return new Promise((resolve) => {
-    renderEpisodePicker(container, episodes, progress, charMap, () => {
-      stopStoryAudio();
-      screen.classList.add("hidden");
-      resolve();
-    });
-  });
+  try {
+    const episodes = await untilAborted(loadEpisodes());
+    if (episodes.length === 0) {
+      container.replaceChildren(
+        el(`
+          <div class="session-content story-picker">
+            <button type="button" class="story-back-btn" aria-label="返回">⬅️</button>
+            <p class="speaking-summary">故事还在路上，晚点再来看吧！</p>
+          </div>
+        `)
+      );
+    }
+    await untilAborted(
+      new Promise((resolve) => {
+        if (episodes.length === 0) {
+          container.querySelector(".story-back-btn").addEventListener("click", resolve, { once: true });
+          return;
+        }
+        renderEpisodePicker(container, episodes, progress, charMap, resolve);
+      })
+    );
+  } finally {
+    stopStoryAudio();
+    releaseMic();
+    container.replaceChildren();
+    leaveScreen("screen-story", run);
+  }
 }
 
 async function loadEpisodes() {
@@ -121,6 +169,7 @@ function renderEpisodeView(container, episode, progress, charMap, onBack) {
 
   function switchLayer(layer) {
     stopStoryAudio();
+    if (layer !== "speak") releaseMic();
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.layer === layer));
     switch (layer) {
       case "listen": renderListenLayer(layerContent, episode); break;
@@ -133,6 +182,7 @@ function renderEpisodeView(container, episode, progress, charMap, onBack) {
   tabs.forEach((t) => t.addEventListener("click", () => switchLayer(t.dataset.layer)));
   view.querySelector(".story-back-btn").addEventListener("click", () => {
     stopStoryAudio();
+    releaseMic();
     onBack();
   });
 
@@ -270,9 +320,8 @@ function renderTapLayer(container, episode) {
 
 function renderSpeakLayer(container, episode, progress) {
   let currentScene = 0;
-  let micStream = null;
 
-  async function render() {
+  function render() {
     const scene = episode.scenes[currentScene];
     const isFirst = currentScene === 0;
     const isLast = currentScene === episode.scenes.length - 1;
@@ -299,50 +348,55 @@ function renderSpeakLayer(container, episode, progress) {
     `);
 
     let recordedBlob = null;
+    let recording = false;
+    const buttonsRow = view.querySelector(".story-speak-buttons");
+    const resultEl = view.querySelector("#speak-result");
 
-    view.querySelector('[data-action="listen"]').addEventListener("click", () => {
-      playStoryAudio(scene.phrase);
-    });
-
-    view.querySelector('[data-action="record"]').addEventListener("click", async () => {
-      if (!micStream) {
-        micStream = await ensureMicPermission(container, progress);
-        if (!micStream) {
-          render();
-          return;
-        }
-      }
-      const recordArea = el(`<div class="story-record-area"></div>`);
-      const resultEl = view.querySelector("#speak-result");
-      resultEl.classList.add("hidden");
-      view.querySelector(".story-speak-buttons").replaceChildren(recordArea);
-
-      const result = await recordWithUI(recordArea, micStream);
-      recordedBlob = result.blob;
-
-      view.querySelector(".story-speak-buttons").innerHTML = `
+    function showButtons(recordLabel) {
+      buttonsRow.innerHTML = `
         <button type="button" class="story-speak-btn" data-action="listen">🔊 听一听</button>
-        <button type="button" class="story-speak-btn story-speak-record" data-action="record">🎤 再试一次</button>
+        <button type="button" class="story-speak-btn story-speak-record" data-action="record">${recordLabel}</button>
       `;
-      view.querySelector('[data-action="listen"]').addEventListener("click", () => {
+      buttonsRow.querySelector('[data-action="listen"]').addEventListener("click", () => {
         playStoryAudio(scene.phrase);
       });
-      view.querySelector('[data-action="record"]').addEventListener("click", async () => {
-        const area = el(`<div class="story-record-area"></div>`);
-        view.querySelector("#speak-result").classList.add("hidden");
-        view.querySelector(".story-speak-buttons").replaceChildren(area);
-        const r = await recordWithUI(area, micStream);
-        recordedBlob = r.blob;
-        render();
-      });
+      buttonsRow.querySelector('[data-action="record"]').addEventListener("click", guarded(recordOnce));
+    }
 
-      if (result.hadSpeech) {
-        resultEl.classList.remove("hidden");
-        resultEl.querySelector('[data-action="playback"]').addEventListener("click", () => {
-          playBlob(recordedBlob);
-        });
-        await playBlob(recordedBlob);
+    async function recordOnce() {
+      if (recording) return; // a double-tap must not start two recorders on one stream
+      recording = true;
+      try {
+        stopStoryAudio();
+        if (!micStream || !micStream.active) {
+          micStream = await ensureMicPermission(container, progress);
+          if (!micStream) {
+            render(); // ensureMicPermission may have replaced the layer with its explainer
+            return;
+          }
+          // The explainer screen (first time only) replaced our view — put it back.
+          if (!container.contains(view)) container.replaceChildren(view);
+        }
+        const recordArea = el(`<div class="story-record-area"></div>`);
+        resultEl.classList.add("hidden");
+        buttonsRow.replaceChildren(recordArea);
+
+        const result = await recordWithUI(recordArea, micStream);
+        recordedBlob = result.blob;
+        showButtons("🎤 再试一次");
+
+        if (result.hadSpeech) {
+          resultEl.classList.remove("hidden");
+          await playBlob(recordedBlob);
+        }
+      } finally {
+        recording = false;
       }
+    }
+
+    showButtons("🎤 说一说");
+    resultEl.querySelector('[data-action="playback"]').addEventListener("click", () => {
+      if (recordedBlob) playBlob(recordedBlob).catch(() => {});
     });
 
     view.querySelector('[data-dir="prev"]')?.addEventListener("click", () => {
