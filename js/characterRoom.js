@@ -4,9 +4,11 @@
 // moved to the speaking room).
 //
 // Entry flow:
-//   1. If a new character is scheduled today and not yet learned → intro
-//      sequence (picture + audio → stroke animation → guided traces), seed
-//      it, then games.
+//   1. With a 重点字 list active (data/focus.json, see focus.js): write
+//      today's 3 focus characters — trace once, then from memory — then
+//      games. Otherwise, if a new character is scheduled today and not yet
+//      learned → intro sequence (picture + audio → stroke animation →
+//      guided traces), seed it, then games.
 //   2. Otherwise → straight into games.
 //   3. A game session is 3 games (each longer than before). She can play
 //      another set or leave whenever — no forced exit.
@@ -21,6 +23,7 @@ import {
   seedCharacter,
   saveProgress,
   startReviewSession,
+  recordMiss,
 } from "./progress.js";
 import { isDue, pickTodaysNewCharacters } from "./scheduler.js";
 import { isResting, processWakeups } from "./rest.js";
@@ -28,7 +31,11 @@ import { animateCharacterOnce, traceWithHints } from "./strokes.js";
 import { charPictureHtml, showCardModal } from "./garden.js";
 import { runGame } from "./games.js";
 import { runPracticeStudio } from "./studio.js";
-import { enterScreen, leaveScreen, sleep, waitForClick, waitForAnyClick } from "./nav.js";
+import { enterScreen, leaveScreen, sleep, untilAborted, waitForClick, waitForAnyClick } from "./nav.js";
+import { loadFocus } from "./data.js";
+import { focusOrder, remainingFocusToday, pickTodaysFocus, markFocusWritten, splitFocusPicks } from "./focus.js";
+import { runWriteFromMemoryStep, showOutcomeScreen } from "./gardenReview.js";
+import { applyGardenTapOutcome } from "./reviewRules.js";
 
 // Target characters (≈ rounds) per game — each now runs meaningfully longer
 // than the old 1-round-per-new-char version. G4 (memory match) uses a fixed
@@ -113,7 +120,8 @@ function learnedEntries(progress, charMap, picturableOnly, today) {
 
 // Builds the character list for one game: today's new character(s) first
 // (guaranteed to appear), then a weighted fill up to the game's round count.
-export function charsForGame(gameId, progress, charMap, todaysNewChars, today) {
+// With a 重点字 list active, about half the fill comes from it.
+export function charsForGame(gameId, progress, charMap, todaysNewChars, today, focusSet = new Set()) {
   const picturable = PICTURE_DEPENDENT_GAMES.has(gameId);
   const rounds = GAME_ROUNDS[gameId] ?? 6;
 
@@ -123,7 +131,11 @@ export function charsForGame(gameId, progress, charMap, todaysNewChars, today) {
     .map((entry) => entry.char);
 
   const rest = learnedEntries(progress, charMap, picturable, today).filter((entry) => !guaranteed.includes(entry.char));
-  const filler = weightedSample(rest, progress, today, Math.max(0, rounds - guaranteed.length));
+  const fillCount = Math.max(0, rounds - guaranteed.length);
+  const filler =
+    focusSet.size > 0
+      ? splitFocusPicks(rest, focusSet, fillCount, (pool, n) => weightedSample(pool, progress, today, n))
+      : weightedSample(rest, progress, today, fillCount);
 
   let list = [...guaranteed, ...filler];
 
@@ -220,15 +232,73 @@ async function runReintro(container, entry) {
   await sleep(400);
 }
 
+// ---------- daily 重点字 writing ----------
+
+// Today's focus characters (focus.js picks them): she learned each one at
+// school, so this is review, not an intro — see and hear it, watch the
+// stroke order once, trace it once to warm up, then write it from memory.
+// The memory write is scored exactly like a garden tap review (same
+// struggle rule, same reviewRules.js outcome), so the box only grows when
+// the character was actually due. Leaving mid-character scores nothing and
+// leaves it in today's list for the next visit.
+async function runFocusWriting(container, progress, charMap, chars, today) {
+  startReviewSession(progress); // window for auto-shelve miss counting
+  await playLine(pickVariant("wateringTimeAnnouncement", 2));
+
+  for (const char of chars) {
+    const entry = charMap.get(char);
+    const state = progress.characters[char];
+    if (!entry || !state) continue;
+
+    container.replaceChildren(
+      el(`
+        <div class="session-content">
+          <div class="big-emoji">${charPictureHtml(entry)}</div>
+          <div class="big-character">${entry.char}</div>
+        </div>
+      `)
+    );
+    await playSequence([`char_${char}`, `word_${char}`]);
+
+    container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
+    let target = container.querySelector(".writer-target");
+    await animateCharacterOnce(target, char, { speed: 1 });
+    await sleep(400);
+    container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
+    target = container.querySelector(".writer-target");
+    await traceWithHints(target, char);
+    await sleep(400);
+
+    container.replaceChildren(
+      el(`
+        <div class="session-content">
+          <div class="big-character">${entry.char}</div>
+        </div>
+      `)
+    );
+    await playLine("gardenTapIntro");
+    await sleep(700);
+
+    const wasDue = isDue(state, today);
+    const struggled = await runWriteFromMemoryStep(container, char);
+    const outcome = applyGardenTapOutcome(state, { isDue: wasDue, struggled }, today);
+    if (struggled) recordMiss(progress, char, today); // may shelve after enough recent misses
+    markFocusWritten(progress, char, today);
+    saveProgress(progress);
+
+    await showOutcomeScreen(container, entry, outcome);
+  }
+}
+
 // ---------- game session ----------
 
-async function runGameSession(container, progress, charMap, todaysNewChars) {
+async function runGameSession(container, progress, charMap, todaysNewChars, focusSet) {
   const today = todayLocalDateString();
   startReviewSession(progress); // window for auto-shelve miss counting
   const games = buildGameSet(progress);
 
   for (const gameId of games) {
-    const targetChars = charsForGame(gameId, progress, charMap, todaysNewChars, today);
+    const targetChars = charsForGame(gameId, progress, charMap, todaysNewChars, today, focusSet);
     if (targetChars.length === 0) continue; // nothing valid for this game (e.g. only particles + a picture game)
     const distractorChars = distractorsFor(targetChars, progress, charMap, today);
     await runGame(gameId, container, { newChars: targetChars, distractorChars, charMap, progress });
@@ -344,7 +414,17 @@ export async function runCharacterRoom(progress, charMap) {
       saveProgress(progress);
     }
 
-    // 1. Intro any new characters scheduled today but not yet learned.
+    // 1. With a 重点字 list active: write today's focus characters. Otherwise
+    //    intro any rank-order new characters scheduled today (the scheduler
+    //    returns none while focus mode is on).
+    const order = focusOrder(await untilAborted(loadFocus()), charMap);
+    const focusSet = new Set(order);
+    if (order.length > 0) {
+      const remaining = remainingFocusToday(progress, order, today);
+      saveProgress(progress); // today's pick is stored on first use
+      if (remaining.length > 0) await runFocusWriting(container, progress, charMap, remaining, today);
+    }
+
     const newEntries = pickTodaysNewCharacters(progress, Array.from(charMap.values()), today);
     for (const entry of newEntries) {
       await runNewCharacterIntro(container, entry);
@@ -357,16 +437,20 @@ export async function runCharacterRoom(progress, charMap) {
       return;
     }
 
-    // Characters learned today — guaranteed a slot in each game.
-    const todaysNewChars = Object.entries(progress.characters)
-      .filter(([, state]) => state.source === "daily" && state.dateLearned === today)
-      .map(([char]) => char);
+    // Characters learned today — guaranteed a slot in each game. In focus
+    // mode that's today's focus characters.
+    const todaysNewChars =
+      order.length > 0
+        ? pickTodaysFocus(progress, order, today).filter((char) => progress.characters[char])
+        : Object.entries(progress.characters)
+            .filter(([, state]) => state.source === "daily" && state.dateLearned === today)
+            .map(([char]) => char);
 
     // 2/3. Game session(s). After each set she can play another, dip into
     //      the card collection or writing practice, or leave.
     let done = false;
     while (!done) {
-      await runGameSession(container, progress, charMap, todaysNewChars);
+      await runGameSession(container, progress, charMap, todaysNewChars, focusSet);
       let choosing = true;
       let firstEnd = true;
       while (choosing) {

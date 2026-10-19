@@ -10,6 +10,10 @@ import {
 } from "./progress.js";
 import { growthStageFor, isDue, pickTodaysNewCharacters, getCharacterOrder } from "./scheduler.js";
 import { restingCharacters, wake } from "./rest.js";
+import { loadFocus } from "./data.js";
+import { focusOrder, pickTodaysFocus } from "./focus.js";
+import { recordParentClip, finishParentClip, playBlob } from "./recorder.js";
+import { saveParentClip, getAllParentClips, deleteParentClip, phraseClipId } from "./recordings.js";
 
 const STAGE_NAMES = ["种子", "发芽", "小苗", "花苞", "开花", "金花"];
 const STAR_EMOJI = { 1: "⭐", 2: "⭐⭐", 3: "⭐⭐⭐" };
@@ -54,6 +58,18 @@ function extractChineseCharacters(text) {
 export function renderParentContent(progress, charMap, onChange) {
   const container = document.getElementById("parent-content");
   container.innerHTML = `
+    <section class="parent-section">
+      <h3>重点字（跟着学校走）</h3>
+      <p class="parent-hint">每天进认认字，先写 3 个重点字（描一遍，再默写一遍），游戏和说一说里大约一半是重点字。列表在 data/focus.json，新一批排在最前面。重点字模式开启时，原来按顺序学新字的功能暂停。</p>
+      <div id="focus-status" class="parent-focus-status">正在读取…</div>
+    </section>
+
+    <section class="parent-section">
+      <h3>说一说 · 家长录音 🎤</h3>
+      <p class="parent-hint">给每个短句录一遍示范：点 🎤 开始，说完点 ⏹ 停止。录好的句子才会出现在说一说里，没录的会自动跳过。录音只存在这台平板上。</p>
+      <div id="phrase-recorder" class="parent-phrase-recorder">正在读取…</div>
+    </section>
+
     <section class="parent-section">
       <h3>已认识的字</h3>
       <p class="parent-hint">粘贴她已经认识的字（任何格式都可以，空格、逗号或连在一起）。这些字会从"金花"阶段开始，第一周会有很多轻松的复习。</p>
@@ -134,6 +150,8 @@ export function renderParentContent(progress, charMap, onChange) {
   `;
 
   fillSettingsFields(progress);
+  renderFocusStatus(progress, charMap);
+  renderPhraseRecorder();
   renderProgressTable(progress, charMap);
   renderRestingList(progress, charMap, onChange);
   renderReorderList(progress, charMap);
@@ -218,6 +236,109 @@ function renderRestingList(progress, charMap, onChange) {
       renderRestingList(progress, charMap, onChange);
       renderProgressTable(progress, charMap);
       onChange?.();
+    });
+  });
+}
+
+// ---------- 重点字 status ----------
+
+async function renderFocusStatus(progress, charMap) {
+  const container = document.getElementById("focus-status");
+  if (!container) return;
+  const order = focusOrder(await loadFocus(), charMap);
+  if (order.length === 0) {
+    container.innerHTML = `<p class="empty-state-message">现在没有重点字，按原来的顺序每天学新字。</p>`;
+    return;
+  }
+  const today = todayLocalDateString();
+  const todays = new Set(pickTodaysFocus(progress, order, today));
+  saveProgress(progress); // the day's pick is stored on first use
+  const written = progress.focus?.written || {};
+  const doneCount = order.filter((c) => written[c]).length;
+  container.innerHTML = `
+    <p class="parent-hint">已写过 ${doneCount} / ${order.length} 个。🟡 今天要写　✅ 写过（日期）　⚪ 还没轮到</p>
+    <div class="focus-chip-list">
+      ${order
+        .map((char) => {
+          const mark = written[char] === today ? "✅" : todays.has(char) ? "🟡" : written[char] ? "✅" : "⚪";
+          const when = written[char] ? `<span class="focus-chip-date">${written[char].slice(5)}</span>` : "";
+          return `<span class="focus-chip">${mark}<span class="focus-chip-char">${char}</span>${when}</span>`;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+// ---------- 家长录音 (phrase model recordings) ----------
+
+let recordingPhraseId = null; // the phrase currently being recorded, if any
+
+async function renderPhraseRecorder() {
+  const container = document.getElementById("phrase-recorder");
+  if (!container) return;
+  const groups = (await loadFocus()).phrases || [];
+  if (groups.length === 0) {
+    container.innerHTML = `<p class="empty-state-message">还没有短句。</p>`;
+    return;
+  }
+  const clips = new Map((await getAllParentClips()).map((clip) => [clip.id, clip]));
+  // A line shared by two rhymes (一二三) is one recording, counted once.
+  const uniqueLines = [...new Set(groups.flatMap((g) => g.lines || []))];
+  const recordedCount = uniqueLines.filter((t) => clips.has(phraseClipId(t))).length;
+  const totalCount = uniqueLines.length;
+
+  container.innerHTML = `
+    <p class="parent-hint">已录 ${recordedCount} / ${totalCount} 句</p>
+    ${groups
+      .map(
+        (group, gi) => `
+          <div class="phrase-group">
+            ${(group.lines || [])
+              .map((text, li) => {
+                const id = phraseClipId(text);
+                const has = clips.has(id);
+                const busy = recordingPhraseId === id;
+                return `
+                  <div class="phrase-row">
+                    <span class="phrase-status">${has ? "✅" : "⚪"}</span>
+                    <span class="phrase-text">${text}</span>
+                    <button type="button" class="icon-button phrase-btn" data-act="rec" data-g="${gi}" data-l="${li}"
+                      ${recordingPhraseId && !busy ? "disabled" : ""}>${busy ? "⏹ 停止" : "🎤"}</button>
+                    <button type="button" class="icon-button phrase-btn" data-act="play" data-g="${gi}" data-l="${li}" ${has ? "" : "disabled"}>▶️</button>
+                    <button type="button" class="icon-button phrase-btn" data-act="del" data-g="${gi}" data-l="${li}" ${has ? "" : "disabled"}>🗑️</button>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `
+      )
+      .join("")}
+  `;
+
+  container.querySelectorAll(".phrase-btn").forEach((btn) => {
+    const text = groups[Number(btn.dataset.g)].lines[Number(btn.dataset.l)];
+    const id = phraseClipId(text);
+    btn.addEventListener("click", async () => {
+      if (btn.dataset.act === "rec") {
+        if (recordingPhraseId === id) {
+          finishParentClip(); // the pending recordParentClip below resolves
+          return;
+        }
+        recordingPhraseId = id;
+        renderPhraseRecorder();
+        const blob = await recordParentClip();
+        recordingPhraseId = null;
+        if (blob && blob.size > 0) await saveParentClip({ id, blob, text, createdAt: Date.now() });
+        renderPhraseRecorder();
+      } else if (btn.dataset.act === "play") {
+        const clip = clips.get(id);
+        if (clip) playBlob(clip.blob).catch(() => {});
+      } else if (btn.dataset.act === "del") {
+        if (!confirm(`删除「${text}」的录音？`)) return;
+        await deleteParentClip(id);
+        renderPhraseRecorder();
+      }
     });
   });
 }

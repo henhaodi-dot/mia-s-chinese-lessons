@@ -256,6 +256,73 @@ export async function recordWithUI(container, stream) {
   return { blob, hadSpeech: speechMs >= MIN_SPEECH_MS, durationMs, rms: peakRms };
 }
 
+// ---------- parent clips (家长录音, Parent Corner) ----------
+//
+// A plain tap-to-start / tap-to-stop recorder for a parent recording the
+// model voice of a phrase. Parent Corner isn't a room — there's no run to
+// abort — so it owns its own stop path: cancelParentClip() is wired into
+// app.js's stopAllAudio(), which every back press runs, so leaving Parent
+// Corner mid-take always releases the mic.
+
+const PARENT_CLIP_MAX_MS = 15000;
+let parentTake = null; // { recorder, stream, cap, keep }
+let parentTakeSeq = 0;
+
+// Resolves with the recorded Blob once finishParentClip() is called (or the
+// 15s cap hits), or null if it was cancelled or the mic couldn't open.
+export async function recordParentClip() {
+  cancelParentClip();
+  const mine = ++parentTakeSeq;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    return null;
+  }
+  if (mine !== parentTakeSeq) {
+    // Cancelled while the mic was opening.
+    stream.getTracks().forEach((track) => track.stop());
+    return null;
+  }
+  const mimeType = pickMimeType();
+  const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+  const chunks = [];
+  recorder.addEventListener("dataavailable", (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
+  });
+  const take = { recorder, stream, cap: null, keep: true };
+  parentTake = take;
+  const stopped = new Promise((resolve) => recorder.addEventListener("stop", resolve, { once: true }));
+  recorder.start();
+  take.cap = setTimeout(finishParentClip, PARENT_CLIP_MAX_MS);
+  await stopped;
+  stream.getTracks().forEach((track) => track.stop());
+  if (parentTake === take) parentTake = null;
+  if (!take.keep || chunks.length === 0) return null;
+  return new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" });
+}
+
+function stopParentTake(keep) {
+  parentTakeSeq += 1; // also cancels a take whose mic is still opening
+  const take = parentTake;
+  if (!take) return;
+  take.keep = keep;
+  clearTimeout(take.cap);
+  try {
+    if (take.recorder.state !== "inactive") take.recorder.stop();
+  } catch {
+    take.stream.getTracks().forEach((track) => track.stop());
+  }
+}
+
+export function finishParentClip() {
+  stopParentTake(true);
+}
+
+export function cancelParentClip() {
+  stopParentTake(false);
+}
+
 // Plays a recorded Blob through a dedicated <audio> element (separate from
 // audio.js's shared model-audio element so the two never fight). Resolves
 // when playback ends. Accepts a Blob or an object URL string. Only one blob

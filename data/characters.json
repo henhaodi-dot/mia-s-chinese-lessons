@@ -198,5 +198,9 @@
   {"char":"很","pinyin":"hěn","meaning":"very","word":"很好","wordPinyin":"hěn hǎo","wordMeaning":"very good","sentence":"我很好。","sentencePinyin":"Wǒ hěn hǎo.","emoji":"💯","rank":197,"picturable":false},
   {"char":"就","pinyin":"jiù","meaning":"then / right away","word":"马上就","wordPinyin":"mǎshàng jiù","wordMeaning":"right away","sentence":"我马上就来。","sentencePinyin":"Wǒ mǎshàng jiù lái.","emoji":"⏩","rank":198,"picturable":false},
   {"char":"还","pinyin":"hái","meaning":"still / also","word":"还有","wordPinyin":"hái yǒu","wordMeaning":"there's also","sentence":"我还想玩。","sentencePinyin":"Wǒ hái xiǎng wán.","emoji":"➕","rank":199,"picturable":false},
-  {"char":"再","pinyin":"zài","meaning":"again","word":"再见","wordPinyin":"zàijiàn","wordMeaning":"goodbye","sentence":"明天再见。","sentencePinyin":"Míngtiān zàijiàn.","emoji":"👋","rank":200,"picturable":false}
+  {"char":"再","pinyin":"zài","meaning":"again","word":"再见","wordPinyin":"zàijiàn","wordMeaning":"goodbye","sentence":"明天再见。","sentencePinyin":"Míngtiān zàijiàn.","emoji":"👋","rank":200,"picturable":false},
+  {"char":"娃","pinyin":"wá","meaning":"baby / doll","word":"娃娃","wordPinyin":"wáwa","wordMeaning":"doll","sentence":"我有一个娃娃。","sentencePinyin":"Wǒ yǒu yí gè wáwa.","emoji":"🧸","rank":201},
+  {"char":"哈","pinyin":"hā","meaning":"ha (laughing sound)","word":"哈哈","wordPinyin":"hāhā","wordMeaning":"haha","sentence":"弟弟哈哈笑。","sentencePinyin":"Dìdi hāhā xiào.","emoji":"😄","rank":202,"picturable":false},
+  {"char":"什","pinyin":"shén","meaning":"what (in 什么)","word":"什么","wordPinyin":"shénme","wordMeaning":"what","sentence":"这是什么？","sentencePinyin":"Zhè shì shénme?","emoji":"❓","rank":203,"picturable":false},
+  {"char":"么","pinyin":"me","meaning":"(suffix in 什么)","word":"什么","wordPinyin":"shénme","wordMeaning":"what","sentence":"你叫什么？","sentencePinyin":"Nǐ jiào shénme?","emoji":"❓","rank":204,"picturable":false}
 ]

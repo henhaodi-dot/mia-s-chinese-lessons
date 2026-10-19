@@ -110,6 +110,9 @@ export function throttledNewCountCap(dueCount) {
 // (possibly empty) — Round 1 introduces all of them in one session.
 export function pickTodaysNewCharacters(progress, allCharacters, todayStr) {
   if (progress.settings.paused) return [];
+  // While a 重点字 list is active, the school's characters (focus.js) replace
+  // the rank-order new-character stream entirely.
+  if (progress.focus?.active) return [];
 
   let budget = progress.settings.dailyNewCount;
   const throttleCap = throttledNewCountCap(countAllDue(progress, todayStr));

@@ -3,11 +3,12 @@
 // a time, refreshes the garden when it ends, and — from the popstate handler
 // — aborts it when the tablet's back button or a room's 🏠 button is used.
 
-import { loadCharacterMap } from "./data.js";
+import { loadCharacterMap, loadFocus } from "./data.js";
+import { applyFocusMode, focusOrder } from "./focus.js";
 import { loadProgress, saveProgress, todayLocalDateString } from "./progress.js";
 import { growthStageFor, isDue } from "./scheduler.js";
 import { unlockAudio, stopAudio } from "./audio.js";
-import { stopBlobPlayback } from "./recorder.js";
+import { stopBlobPlayback, cancelParentClip } from "./recorder.js";
 import { stopStoryAudio } from "./storyMode.js";
 import {
   updatePandaIdleOrSleep,
@@ -47,11 +48,13 @@ function showScreen(id) {
 }
 
 // Silence everything a room might have left mid-play. Called whenever a run
-// is torn down from outside (back button / 🏠).
+// is torn down from outside (back button / 🏠) — including leaving Parent
+// Corner, where a parent might be mid-way through recording a phrase.
 function stopAllAudio() {
   stopAudio();
   stopBlobPlayback();
   stopStoryAudio();
+  cancelParentClip();
 }
 
 function refreshGarden() {
@@ -246,6 +249,13 @@ async function main() {
   // review pool reflect it immediately (the gentle reintro itself happens
   // when she next enters the character room).
   if (processWakeups(progress, todayLocalDateString()).length > 0) {
+    saveProgress(progress);
+  }
+
+  // 重点字: plant this week's school characters (and switch the rank-order
+  // daily new characters off) before the garden first renders.
+  const focusData = await loadFocus();
+  if (applyFocusMode(progress, focusOrder(focusData, charMap), todayLocalDateString())) {
     saveProgress(progress);
   }
 
