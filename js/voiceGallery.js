@@ -7,7 +7,7 @@
 
 import { playLine } from "./audio.js";
 import { playBlob } from "./recorder.js";
-import { getAllRecordings, recordingScore } from "./recordings.js";
+import { getAllRecordings, getParentClip, recordingScore } from "./recordings.js";
 import { untilAborted, waitForClick } from "./nav.js";
 
 // Above this "loud + long enough" score, a clip gets the gold border.
@@ -36,7 +36,7 @@ function miniWaveformBars(rec) {
 }
 
 function tileLabel(rec) {
-  if (rec.kind === "sentence" || rec.kind === "storyline") {
+  if (rec.kind === "sentence" || rec.kind === "storyline" || rec.kind === "phrase") {
     const first = (rec.text || "").slice(0, 6);
     return first + ((rec.text || "").length > 6 ? "…" : "");
   }
@@ -53,7 +53,15 @@ async function playHersModelHers(rec) {
   const mine = ++playSeq;
   await playBlob(rec.blob);
   if (mine !== playSeq) return;
-  await playLine(rec.modelKey || rec.id);
+  if (rec.kind === "phrase") {
+    // A phrase echo's model is the parent's recording of the same line
+    // (same id in the parent-clip store), not a generated spoken line.
+    const clip = await getParentClip(rec.id);
+    if (mine !== playSeq) return;
+    if (clip) await playBlob(clip.blob);
+  } else {
+    await playLine(rec.modelKey || rec.id);
+  }
   if (mine !== playSeq) return;
   await playBlob(rec.blob);
 }

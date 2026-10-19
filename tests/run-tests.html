@@ -17,9 +17,10 @@
   <div id="summary">Running...</div>
   <ul id="results"></ul>
   <script type="module">
-    import { runAll } from "./reviewRules.test.js";
+    import { runAll as runReviewRules } from "./reviewRules.test.js";
+    import { runAll as runFocus } from "./focus.test.js";
 
-    const results = runAll();
+    const results = [...runReviewRules(), ...runFocus()];
     const list = document.getElementById("results");
     const summary = document.getElementById("summary");
 

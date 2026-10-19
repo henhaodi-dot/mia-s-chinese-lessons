@@ -25,7 +25,9 @@ function el(html) {
   return template.content.firstElementChild;
 }
 
-async function runWriteFromMemoryStep(container, char) {
+// Also used by the character room's daily 重点字 writing (characterRoom.js),
+// so a focus character is judged by exactly the same struggle rule.
+export async function runWriteFromMemoryStep(container, char) {
   container.replaceChildren(el(`<div class="session-content"><div class="writer-target"></div></div>`));
   const target = container.querySelector(".writer-target");
 
@@ -52,7 +54,7 @@ async function showVisitorArrival(container, visitorId) {
   await sleep(800);
 }
 
-async function showOutcomeScreen(container, entry, outcomeResult) {
+export async function showOutcomeScreen(container, entry, outcomeResult) {
   await playLine(`word_${entry.char}`);
 
   if (outcomeResult.outcome === "grew") {

@@ -1516,6 +1516,53 @@ button {
   font-size: 14px;
 }
 
+/* 重点字 status */
+.focus-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.focus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.focus-chip-char {
+  font-size: 22px;
+  font-weight: bold;
+}
+.focus-chip-date {
+  color: var(--text-dark);
+  font-size: 11px;
+}
+
+/* 家长录音 phrase recorder */
+.phrase-group {
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.phrase-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.phrase-text {
+  flex: 1;
+  font-size: 22px;
+}
+.phrase-btn {
+  font-size: 16px;
+  min-width: 44px;
+}
+.phrase-btn:disabled {
+  opacity: 0.35;
+}
+
 /* learning-order reorder tool */
 .reorder-list {
   display: flex;

@@ -9,7 +9,7 @@
 import { isResting, recentMissCount, shelve, MISS_THRESHOLD } from "./rest.js";
 
 const STORAGE_KEY = "hanziGardenProgress";
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 // ---------- local-date helpers ----------
 // Everything in this app keys off the device's local calendar date, never
@@ -135,6 +135,12 @@ function migrate(progress) {
   // sequence). All read as "absent = default" everywhere (isResting treats
   // no restUntil as active, recentMisses||[], characterOrder falls back to
   // rank order), so existing data needs no touch-up.
+
+  // v5 adds: top-level focus { active, written: {char: date}, day: {date,
+  // chars} } for the 重点字 daily writing (focus.js), and speaking
+  // .recentPhraseGroups. focus.js creates the object on first use and app.js
+  // re-derives `active` from data/focus.json on every start, so nothing
+  // needs filling in here.
 
   // Backfill streakCalendar for all days from startDate to today.
   if (!isRecord(progress.streakCalendar)) progress.streakCalendar = {};

@@ -20,8 +20,9 @@ import { todayLocalDateString, daysBetweenLocalDateStrings, saveProgress } from 
 import { isDue } from "./scheduler.js";
 import { isResting } from "./rest.js";
 import { isRecordingSupported, ensureMicPermission, recordWithUI, playBlob } from "./recorder.js";
-import { saveRecording } from "./recordings.js";
-import { loadDialogues } from "./data.js";
+import { saveRecording, getAllParentClips, phraseClipId } from "./recordings.js";
+import { loadDialogues, loadFocus } from "./data.js";
+import { focusOrder, splitFocusPicks } from "./focus.js";
 import { getAllStories, warmStoriesCache } from "./stories.js";
 import { runVoiceGallery } from "./voiceGallery.js";
 import { RunAborted, enterScreen, leaveScreen, sleep, waitForTap, waitForClick, waitForAnyClick, untilAborted, onAbortOfCurrentRun } from "./nav.js";
@@ -47,8 +48,14 @@ function shuffle(array) {
   return copy;
 }
 
+// This visit's 重点字 (focus.js), set when the room opens. Module-level
+// rather than threaded through every activity's signature: one visit runs
+// at a time, and it's only read by pickWeightedChars below.
+let visitFocusSet = new Set();
+
 // Weighted toward due + shaky + recently-learned, sampled without
-// replacement. Shared by A1/A2/A5.
+// replacement. Shared by A1/A2/A5. With a 重点字 list active, about half the
+// picks come from it.
 function pickWeightedChars(progress, charMap, count) {
   const today = todayLocalDateString();
   const scored = Object.keys(progress.characters)
@@ -64,31 +71,38 @@ function pickWeightedChars(progress, charMap, count) {
         ? daysBetweenLocalDateStrings(state.dateLearned, today)
         : 999;
       if (daysSince <= 2) weight += 3;
-      return { entry, weight };
+      return { entry, char: entry.char, weight };
     });
 
-  const picked = [];
-  const pool = [...scored];
-  while (picked.length < count && pool.length > 0) {
-    const total = pool.reduce((sum, s) => sum + s.weight, 0);
-    let roll = Math.random() * total;
-    let idx = 0;
-    for (; idx < pool.length; idx++) {
-      roll -= pool[idx].weight;
-      if (roll <= 0) break;
+  const sample = (candidates, n) => {
+    const picked = [];
+    const pool = [...candidates];
+    while (picked.length < n && pool.length > 0) {
+      const total = pool.reduce((sum, s) => sum + s.weight, 0);
+      let roll = Math.random() * total;
+      let idx = 0;
+      for (; idx < pool.length; idx++) {
+        roll -= pool[idx].weight;
+        if (roll <= 0) break;
+      }
+      idx = Math.min(idx, pool.length - 1);
+      picked.push(pool[idx].entry);
+      pool.splice(idx, 1);
     }
-    idx = Math.min(idx, pool.length - 1);
-    picked.push(pool[idx].entry);
-    pool.splice(idx, 1);
-  }
-  return picked;
+    return picked;
+  };
+  if (visitFocusSet.size === 0) return sample(scored, count);
+  return splitFocusPicks(scored, visitFocusSet, count, sample);
 }
 
 // ---------- shared record → playback → compare → star beat ----------
 
-async function echoOnce(container, stream, { showHtml, modelKeys, saveId, saveMeta, compareModelKey }) {
+// `playModel` (optional) replaces the spoken-line model: the phrase echoes
+// play a parent's recording instead of a generated line.
+async function echoOnce(container, stream, { showHtml, modelKeys, playModel, saveId, saveMeta, compareModelKey }) {
+  const model = playModel || (() => playSequence(modelKeys));
   container.replaceChildren(el(showHtml));
-  await playSequence(modelKeys);
+  await model();
 
   await playLine("echoInstruction");
   let take = await recordWithUI(container, stream);
@@ -114,11 +128,11 @@ async function echoOnce(container, stream, { showHtml, modelKeys, saveId, saveMe
     }));
   }
 
-  await showCompare(container, compareModelKey, take.blob);
+  await showCompare(container, playModel || (() => playLine(compareModelKey)), take.blob);
   return 1;
 }
 
-async function showCompare(container, modelKey, blob) {
+async function showCompare(container, replayModel, blob) {
   const screen = el(`
     <div class="session-content">
       <div class="big-emoji echo-star">⭐</div>
@@ -131,7 +145,7 @@ async function showCompare(container, modelKey, blob) {
   `);
   container.replaceChildren(screen);
   await playLine("echoDone");
-  screen.querySelector("#btn-replay-model").addEventListener("click", () => playLine(modelKey).catch(() => {}));
+  screen.querySelector("#btn-replay-model").addEventListener("click", () => replayModel().catch(() => {}));
   screen.querySelector("#btn-replay-mine").addEventListener("click", () => playBlob(blob).catch(() => {}));
   await waitForClick(screen.querySelector("#btn-echo-continue"));
 }
@@ -195,6 +209,76 @@ async function runEchoSentences(container, stream, progress, charMap) {
     });
   }
   return n;
+}
+
+// ---------- A0 跟我说短句 (parent-recorded phrase echoes) ----------
+//
+// Short phrases from data/focus.json, grouped short → long (弟弟笑 →
+// 弟弟哈哈笑): say the core first, then the longer version. The model voice
+// is a parent's own recording from Parent Corner; a line nobody has
+// recorded yet is simply left out, and a group with no recorded lines
+// doesn't appear at all, so she never meets a silent model.
+
+// Whole groups are taken (a rhyme only works in order) until about this
+// many lines: one 4-line rhyme, or two 2-line pairs. Every line is a full
+// listen → say → hear yourself beat, so more than ~4 drags for a child.
+const A0_LINE_TARGET = 4;
+
+// Groups trimmed to their recorded lines: [{ key, lines: [{ text, clip }] }].
+async function loadRecordedPhraseGroups(focusData) {
+  const clips = new Map((await getAllParentClips()).map((clip) => [clip.id, clip]));
+  return (focusData.phrases || [])
+    .map((group) => ({
+      key: (group.lines || []).join("/"),
+      lines: (group.lines || [])
+        .map((text) => ({ text, clip: clips.get(phraseClipId(text)) }))
+        .filter((line) => line.clip && line.clip.blob),
+    }))
+    .filter((group) => group.lines.length > 0);
+}
+
+// Least-recently-practised groups first, so every group comes round.
+function pickPhraseGroups(progress, groups, lineTarget) {
+  const recent = progress.speaking?.recentPhraseGroups || [];
+  const ordered = shuffle(groups).sort((a, b) => recent.indexOf(a.key) - recent.indexOf(b.key));
+  const chosen = [];
+  let lines = 0;
+  for (const group of ordered) {
+    if (lines >= lineTarget) break;
+    chosen.push(group);
+    lines += group.lines.length;
+  }
+  return chosen;
+}
+
+function rememberPhraseGroup(progress, key) {
+  if (!progress.speaking) progress.speaking = {};
+  const recent = (progress.speaking.recentPhraseGroups || []).filter((k) => k !== key);
+  recent.push(key);
+  progress.speaking.recentPhraseGroups = recent.slice(-40);
+  saveProgress(progress);
+}
+
+function makeRunEchoPhrases(groups) {
+  return async function runEchoPhrases(container, stream, progress, charMap) {
+    const chosen = pickPhraseGroups(progress, groups, A0_LINE_TARGET);
+    if (chosen.length === 0) return 0;
+    await playLine("echoSentenceIntro");
+    let n = 0;
+    for (const group of chosen) {
+      for (const { text, clip } of group.lines) {
+        const phraseHtml = renderSentenceHtml(text, progress, charMap);
+        n += await echoOnce(container, stream, {
+          showHtml: `<div class="session-content"><div class="speaking-modeler">🐼</div><div class="speaking-sentence">${phraseHtml}</div></div>`,
+          playModel: () => playBlob(clip.blob),
+          saveId: phraseClipId(text),
+          saveMeta: { kind: "phrase", text },
+        });
+      }
+      rememberPhraseGroup(progress, group.key);
+    }
+    return n;
+  };
 }
 
 // ---------- A3 熊猫问你 (panda asks you) ----------
@@ -417,7 +501,10 @@ async function runSayItLoud(container, stream, progress, charMap) {
 
 // ---------- visit orchestration ----------
 
-function buildVisit() {
+// With recorded phrases available, the phrase echoes open the visit — they
+// are the current focus — and the rest of the visit is one activity shorter
+// so the total length stays about the same.
+function buildVisit(phraseGroups = []) {
   const warmups = shuffle([runEchoWords, runEchoSentences]);
   const meaty = shuffle([runDialogues, runStoryRetell]);
   const order = [warmups[0], meaty[0]];
@@ -428,7 +515,8 @@ function buildVisit() {
   } else {
     order.push(Math.random() < 0.5 ? warmups[1] : meaty[1]);
   }
-  return order;
+  if (phraseGroups.length === 0) return order;
+  return [makeRunEchoPhrases(phraseGroups), ...order.slice(1)];
 }
 
 // ---------- room shell ----------
@@ -504,8 +592,12 @@ export async function runSpeakingRoom(progress, charMap) {
       await showMessage(container, "🐼", "还没有学过的字，先去认认字种一颗种子吧！");
       return;
     }
+    const focusData = await untilAborted(loadFocus());
+    visitFocusSet = new Set(focusOrder(focusData, charMap));
+    const phraseGroups = await untilAborted(loadRecordedPhraseGroups(focusData));
+
     let recorded = 0;
-    for (const activity of buildVisit()) {
+    for (const activity of buildVisit(phraseGroups)) {
       recorded += await activity(container, stream, progress, charMap);
     }
     await showSummary(container, recorded);

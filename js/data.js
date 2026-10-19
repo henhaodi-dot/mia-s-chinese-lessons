@@ -37,6 +37,23 @@ export async function loadDialogues() {
   return dialoguesCache;
 }
 
+// 重点字 list + the parent-recorded echo phrases (see focus.js). Optional —
+// a missing or broken file reads as "no focus list", which turns focus mode
+// off and brings back the rank-order daily new characters.
+let focusCache = null;
+
+export async function loadFocus() {
+  if (!focusCache) {
+    try {
+      const res = await fetch("./data/focus.json");
+      focusCache = res.ok ? await res.json() : { batches: [], phrases: [] };
+    } catch {
+      focusCache = { batches: [], phrases: [] };
+    }
+  }
+  return focusCache;
+}
+
 // Convenience: characters.json as a Map keyed by char, since almost every
 // lookup in the app is "give me the entry for this character".
 let charByCharCache = null;

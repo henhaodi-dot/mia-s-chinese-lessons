@@ -21,16 +21,20 @@ export const VISITOR_EMOJI = { butterfly: "🦋", ladybug: "🐞", firefly: "✨
 
 // Renders a character's "picture" — a real illustration if one has been
 // generated for it (scripts/generate_illustrations.py), the emoji fallback
-// otherwise. `entry.picturable === false` is the only characters.json
-// entries without one (pure grammatical particles/measure words with no
-// concrete subject to draw) — everything else has a real PNG. Sized via
-// `em` so it automatically matches whatever font-size context it's placed
-// in (.big-emoji, .plant-emoji, .choice-tile, etc.) with no per-caller class.
+// otherwise. `entry.picturable === false` marks the entries that never get
+// one (pure grammatical particles/measure words with no concrete subject to
+// draw). A picturable character whose PNG hasn't been generated yet — every
+// newly added school character, until generate_illustrations.py is run —
+// swaps itself for the emoji when the image fails to load, instead of
+// showing a broken-image box. Sized via `em` so it automatically matches
+// whatever font-size context it's placed in (.big-emoji, .plant-emoji,
+// .choice-tile, etc.) with no per-caller class.
 export function charPictureHtml(entry) {
   if (entry.picturable === false) {
     return entry.emoji;
   }
-  return `<img src="assets/img/${encodeURIComponent(entry.char)}.png" class="char-picture-img" alt="${entry.char}">`;
+  const fallback = JSON.stringify(entry.emoji || "").replace(/"/g, "&quot;");
+  return `<img src="assets/img/${encodeURIComponent(entry.char)}.png" class="char-picture-img" alt="${entry.char}" onerror="this.replaceWith(${fallback})">`;
 }
 
 // ---------- panda mascot ----------
